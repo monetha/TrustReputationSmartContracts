@@ -11,7 +11,7 @@ contract PaymentAcceptor is Destructible, Contactable {
 
     function () external payable {
         require(msg.value == price);
-        require(this.balance == 0);
+        require(this.balance - msg.value == 0); //the order should not be paid already
         require(orderId == 0);
     }
 
