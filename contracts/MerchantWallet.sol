@@ -11,7 +11,9 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
 
     mapping (string=>string) profileMap;
     mapping (string=>string) paymentSettingsMap;
-    mapping (string=>string) compositeReputationMap;
+    mapping (string=>uint32) compositeReputationMap;
+
+    uint8 public constant REPUTATION_DECIMALS = 4;
 
     modifier onlyMerchant() {
         require(msg.sender == merchantAccount);
@@ -34,7 +36,7 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         return paymentSettingsMap[key];
     }
 
-    function compositeReputation(string key) public constant returns (string) {
+    function compositeReputation(string key) public constant returns (uint32) {
         return compositeReputationMap[key];
     }
 
@@ -46,17 +48,17 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         paymentSettingsMap[key] = value;
     }
 
-    function setCompositeReputation(string key, string value) public onlyOwner {
+    function setCompositeReputation(string key, uint32 value) public onlyOwner {
         compositeReputationMap[key] = value;
     }
 
-    function withdraw(address beneficiary, uint amount) public onlyMerchant whenNotPaused {
+    function withdrawTo(address beneficiary, uint amount) public onlyMerchant whenNotPaused {
         require(beneficiary != 0x0);
         beneficiary.transfer(amount);
     }
 
     function withdraw(uint amount) public {
-        withdraw(msg.sender, amount);
+        withdrawTo(msg.sender, amount);
     }
 
     function changeMerchantAccount(address newAccount) public onlyMerchant whenNotPaused {
