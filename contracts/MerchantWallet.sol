@@ -25,30 +25,30 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         merchantAccount = _merchantAccount;
     }
     
-    function () payable {
+    function () external payable {
     }
 
-    function profile(string key) public constant returns (string) {
+    function profile(string key) external constant returns (string) {
         return profileMap[key];
     }
 
-    function paymentSettings(string key) public constant returns (string) {
+    function paymentSettings(string key) external constant returns (string) {
         return paymentSettingsMap[key];
     }
 
-    function compositeReputation(string key) public constant returns (uint32) {
+    function compositeReputation(string key) external constant returns (uint32) {
         return compositeReputationMap[key];
     }
 
-    function setProfile(string key, string value) public onlyOwner {
+    function setProfile(string key, string value) external onlyOwner {
         profileMap[key] = value;
     }
 
-    function setPaymentSettings(string key, string value) public onlyOwner {
+    function setPaymentSettings(string key, string value) external onlyOwner {
         paymentSettingsMap[key] = value;
     }
 
-    function setCompositeReputation(string key, uint32 value) public onlyOwner {
+    function setCompositeReputation(string key, uint32 value) external onlyOwner {
         compositeReputationMap[key] = value;
     }
 
@@ -57,11 +57,11 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         beneficiary.transfer(amount);
     }
 
-    function withdraw(uint amount) public {
+    function withdraw(uint amount) external {
         withdrawTo(msg.sender, amount);
     }
 
-    function changeMerchantAccount(address newAccount) public onlyMerchant whenNotPaused {
+    function changeMerchantAccount(address newAccount) external onlyMerchant whenNotPaused {
         merchantAccount = newAccount;
     }
 }
