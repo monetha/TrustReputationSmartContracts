@@ -20,9 +20,9 @@ contract PaymentAcceptor is Destructible, Contactable {
         price = _price;
     }
 
-    function acceptPayment() external onlyOwner {
+    function acceptPayment(address beneficiary) external onlyOwner {
         orderId = 0;
         price = 0;
-        msg.sender.transfer(this.balance);
+        beneficiary.transfer(this.balance);
     }
 }
