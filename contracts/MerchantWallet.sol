@@ -11,7 +11,9 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
 
     mapping (string=>string) profileMap;
     mapping (string=>string) paymentSettingsMap;
-    mapping (string=>string) compositeReputationMap;
+    mapping (string=>uint32) compositeReputationMap;
+
+    uint8 public constant REPUTATION_DECIMALS = 4;
 
     modifier onlyMerchant() {
         require(msg.sender == merchantAccount);
@@ -23,43 +25,43 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         merchantAccount = _merchantAccount;
     }
     
-    function () payable {
+    function () external payable {
     }
 
-    function profile(string key) public constant returns (string) {
+    function profile(string key) external constant returns (string) {
         return profileMap[key];
     }
 
-    function paymentSettings(string key) public constant returns (string) {
+    function paymentSettings(string key) external constant returns (string) {
         return paymentSettingsMap[key];
     }
 
-    function compositeReputation(string key) public constant returns (string) {
+    function compositeReputation(string key) external constant returns (uint32) {
         return compositeReputationMap[key];
     }
 
-    function setProfile(string key, string value) public onlyOwner {
+    function setProfile(string key, string value) external onlyOwner {
         profileMap[key] = value;
     }
 
-    function setPaymentSettings(string key, string value) public onlyOwner {
+    function setPaymentSettings(string key, string value) external onlyOwner {
         paymentSettingsMap[key] = value;
     }
 
-    function setCompositeReputation(string key, string value) public onlyOwner {
+    function setCompositeReputation(string key, uint32 value) external onlyOwner {
         compositeReputationMap[key] = value;
     }
 
-    function withdraw(address beneficiary, uint amount) public onlyMerchant whenNotPaused {
+    function withdrawTo(address beneficiary, uint amount) public onlyMerchant whenNotPaused {
         require(beneficiary != 0x0);
         beneficiary.transfer(amount);
     }
 
-    function withdraw(uint amount) public {
-        withdraw(msg.sender, amount);
+    function withdraw(uint amount) external {
+        withdrawTo(msg.sender, amount);
     }
 
-    function changeMerchantAccount(address newAccount) public onlyMerchant whenNotPaused {
+    function changeMerchantAccount(address newAccount) external onlyMerchant whenNotPaused {
         merchantAccount = newAccount;
     }
 }
