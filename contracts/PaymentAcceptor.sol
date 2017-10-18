@@ -15,7 +15,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     uint public price;
 
     function PaymentAcceptor(address _merchantAccount) {
-        require(_merchantAccount != 0x0);
+        require(_merchantAccount != 0x0); //probably this check is not needed in order to be able to use the same code for generic Acceptors' pool 
         merchantAccount = _merchantAccount;
     }
 
