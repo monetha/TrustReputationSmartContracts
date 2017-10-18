@@ -3,16 +3,16 @@ pragma solidity 0.4.15;
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 
 
-contract DealsHistory is Contactable{
+contract MerchantDealsHistory is Contactable {
 
     string constant VERSION = "1.0";
 
     string public merchantId;
     address orderProcessor;
     
-    event DealCompleted(uint indexed orderId, address indexed clientAddress, uint dealHash);
+    event DealCompleted(uint indexed orderId, address indexed clientAddress, bool successful, uint dealHash);
 
-    function DealsHistory(string _merchantId, address _orderProcessor) public {
+    function MerchantDealsHistory(string _merchantId, address _orderProcessor) public {
         require(bytes(_merchantId).length > 0);
         require(_orderProcessor != 0x0);
         
@@ -20,9 +20,21 @@ contract DealsHistory is Contactable{
         orderProcessor = _orderProcessor;
     }
 
-    function recordDeal(uint _orderId, address _clientAddress, uint _dealHash) external {
+    function recordDeal(
+        uint _orderId,
+        address _clientAddress,
+        bool _successful,
+        uint _dealHash)
+        external
+    {
         require(tx.origin == orderProcessor);
-        DealCompleted(_orderId, _clientAddress, _dealHash);
+        
+        DealCompleted(
+            _orderId,
+            _clientAddress,
+            _successful,
+            _dealHash
+        );
     }
 
     function changeOrderProcessor(address newOrderProcessor) external onlyOwner {

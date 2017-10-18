@@ -2,41 +2,90 @@ pragma solidity 0.4.15;
 
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
+import "./MonethaGateway.sol";
+import "./MerchantDealsHistory.sol";
 
 
 contract PaymentAcceptor is Destructible, Contactable {
 
     string constant VERSION = "1.0";
     
-    address public merchant;
+    MonethaGateway public monethaGateway;
+    string public merchantId;
     uint public orderId;
     uint public price;
+    address public client;
+    State public state;
 
-    function PaymentAcceptor(address _merchant) {
-        merchant = _merchant;
+    enum State {Inactive, MerchantAssigned, OrderAssigned, Paid}
+
+    modifier atState(State _state) {
+        require(_state == state);
+        _;
     }
 
-    //to be able to return back merchant from Merchant's Pool to Global Reserve Pool
-    function setMerchant(address _merchant) external onlyOwner {
-        merchant = _merchant;
+    modifier transition(State _state) {
+        _;
+        state = _state;
     }
 
-    function () external payable {
-        require(merchant != 0x0);
-        require(orderId != 0);
-        require(msg.value == price);
-        require(this.balance - msg.value == 0); //the order should not be paid already
+    function PaymentAcceptor(string _merchantId, MonethaGateway _monethaGateway) {
+        changeMonethaGateway(_monethaGateway);
+        setMerchantId(_merchantId);
     }
 
-    function assignOrder(uint _orderId, uint _price, address _merchant) external onlyOwner {
-        require(merchant == _merchant);
+    function setMerchantId(string _merchantId) public
+        atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner 
+    {
+        require(bytes(_merchantId).length > 0);
+        merchantId = _merchantId;
+    }
+
+    function unassignMerchant() external
+        atState(State.MerchantAssigned) transition(State.Inactive) onlyOwner
+    {
+        merchantId = "";
+    }
+
+    function assignOrder(uint _orderId, uint _price) external
+        atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyOwner 
+    {
+        require(_orderId != 0);
+        require(_price != 0);
+
         orderId = _orderId;
         price = _price;
     }
 
-    function processPayment(address beneficiary) external onlyOwner {
-        beneficiary.transfer(this.balance);
-        orderId = 0;
-        price = 0;
+    function () external payable
+        atState(State.OrderAssigned) transition(State.Paid) 
+    {
+        require(msg.value == price);
+        require(this.balance - msg.value == 0); //the order should not be paid already
+
+        client = msg.sender;
+    }
+
+    function refundPayment(MerchantDealsHistory merchantHistory, uint dealHash) external
+        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
+    {
+        client.transfer(this.balance);
+        merchantHistory.recordDeal(orderId, client, false, dealHash);
+    }
+
+    function processPayment(
+        address merchantWallet,
+        MerchantDealsHistory merchantHistory,
+        uint dealHash) 
+        external 
+        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
+    {
+        monethaGateway.acceptPayment.value(this.balance)(merchantWallet);
+        merchantHistory.recordDeal(orderId, client, true, dealHash);
+    }
+
+    function changeMonethaGateway(MonethaGateway newGateway) public onlyOwner {
+        require(address(newGateway) != 0x0);
+        monethaGateway = newGateway;
     }
 }
