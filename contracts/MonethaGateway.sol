@@ -4,7 +4,7 @@ import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 
 
-contract MonethaGateway is Contactable, Destructable{
+contract MonethaGateway is Contactable, Destructible{
 
     uint8 public constant FEE_PROMILLE = 15;
     
