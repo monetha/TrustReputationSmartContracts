@@ -8,56 +8,35 @@ contract PaymentAcceptor is Destructible, Contactable {
 
     string constant VERSION = "1.0";
     
-    address public merchantAccount;
-    address public buyerAccount;
-
+    address public merchant;
     uint public orderId;
     uint public price;
 
-    function PaymentAcceptor(address _merchantAccount) {
-        require(_merchantAccount != 0x0); //probably this check is not needed in order to be able to use the same code for generic Acceptors' pool 
-        merchantAccount = _merchantAccount;
+    function PaymentAcceptor(address _merchant) {
+        merchant = _merchant;
     }
 
-    //to be able to return back merchantAccount from pool to pool
-    function setMerchant(address _merchantAccount) external onlyOwner {
-        merchantAccount = _merchantAccount;
+    //to be able to return back merchant from Merchant's Pool to Global Reserve Pool
+    function setMerchant(address _merchant) external onlyOwner {
+        merchant = _merchant;
     }
 
     function () external payable {
-        require(buyerAccount == 0x0);
-        require(merchantAccount != 0x0);
+        require(merchant != 0x0);
+        require(orderId != 0);
         require(msg.value == price);
         require(this.balance - msg.value == 0); //the order should not be paid already
-        require(orderId != 0);
-
-        buyerAccount = msg.sender;
     }
 
-    function assignOrder(uint _orderId, uint _price, _merchantAccount) external onlyOwner {
-        require(merchantAccount == _merchantAccount);
+    function assignOrder(uint _orderId, uint _price, address _merchant) external onlyOwner {
+        require(merchant == _merchant);
         orderId = _orderId;
         price = _price;
     }
 
-    function refundPayment(uint _orderId, address _merchantAccount, address _buyerAccount) external onlyMerchant {
-        //refund to buyer
-        require(merchantAccount == _merchantAccount);
-        require(buyerAccount == _buyerAccount);
-        require(orderId == _orderId);
-
-        assert(buyerAccount.transfer(this.balance));
-
-        //reset acceptor
-        orderId = 0;
-        price = 0;
-        buyerAccount = 0x0;
-    }
-
     function processPayment(address beneficiary) external onlyOwner {
-        assert(beneficiary.transfer(this.balance));
+        beneficiary.transfer(this.balance);
         orderId = 0;
         price = 0;
-        buyerAccount = 0x0;
     }
 }
