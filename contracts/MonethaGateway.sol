@@ -14,17 +14,12 @@ contract MonethaGateway is Contactable, Destructible{
 
     event PaymentProcessed(address merchantWallet, uint merchantIncome, uint monethaIncome);
 
-    function MonethaGateway(address _monethaVault) public {
+    function MonethaGateway(address _monethaVault, address _orderProcessor) public {
         require(_monethaVault != 0x0);
+        require(_orderProcessor != 0x0);
+        
         monethaVault = _monethaVault;
-    }
-
-    function changeMonethaVault(address newVault) external onlyOwner {
-        monethaVault = newVault;
-    }
-
-    function changeOrderProcessor(address newOrderProcessor) external onlyOwner {
-        orderProcessor = newOrderProcessor;
+        orderProcessor = _orderProcessor;
     }
 
     function acceptPayment(address _merchantWallet) external payable {
@@ -38,5 +33,13 @@ contract MonethaGateway is Contactable, Destructible{
         monethaVault.transfer(monethaIncome);
 
         PaymentProcessed(_merchantWallet, merchantIncome, monethaIncome);
+    }
+
+    function changeMonethaVault(address newVault) external onlyOwner {
+        monethaVault = newVault;
+    }
+
+    function changeOrderProcessor(address newOrderProcessor) external onlyOwner {
+        orderProcessor = newOrderProcessor;
     }
 }
