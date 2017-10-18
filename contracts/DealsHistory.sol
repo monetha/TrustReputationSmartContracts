@@ -5,6 +5,8 @@ import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 
 contract DealsHistory is Contactable{
 
+    string constant VERSION = "1.0";
+
     string public merchantId;
     address orderProcessor;
     

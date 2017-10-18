@@ -6,6 +6,8 @@ import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 
 
 contract MerchantWallet is Pausable, Destructible, Contactable {
+    
+    string constant VERSION = "1.0";
 
     address public merchantAccount;
 
