@@ -82,6 +82,9 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         monethaGateway.acceptPayment.value(this.balance)(merchantWallet);
         merchantHistory.recordDeal(orderId, client, true, dealHash);
+
+        orderId = 0;
+        price = 0;
     }
 
     function changeMonethaGateway(MonethaGateway newGateway) public onlyOwner {
