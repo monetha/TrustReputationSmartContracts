@@ -23,6 +23,8 @@ contract MerchantDealsHistory is Contactable {
     function recordDeal(
         uint _orderId,
         address _clientAddress,
+        uint _clientReputation,
+        uint _merchantReputation,
         bool _successful,
         uint _dealHash)
         external
@@ -32,6 +34,8 @@ contract MerchantDealsHistory is Contactable {
         DealCompleted(
             _orderId,
             _clientAddress,
+            _clientReputation,
+            _merchantReputation,
             _successful,
             _dealHash
         );

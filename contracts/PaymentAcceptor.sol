@@ -66,17 +66,17 @@ contract PaymentAcceptor is Destructible, Contactable {
         client = msg.sender;
     }
 
-    function refundPayment(MerchantDealsHistory merchantHistory, uint dealHash) external
+    function refundPayment(MerchantDealsHistory _merchantHistory, uint dealHash) external
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
     {
         client.transfer(this.balance);
-        merchantHistory.recordDeal(orderId, client, false, dealHash);
+        _merchantHistory.recordDeal(orderId, client, false, _dealHash);
     }
 
     function cancelOrder(
-        address merchantWallet,
-        MerchantDealsHistory merchantHistory,
-        uint dealHash) 
+        address _merchantWallet,
+        MerchantDealsHistory _merchantHistory,
+        uint _dealHash) 
         external 
         atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyOwner
     {
@@ -88,21 +88,24 @@ contract PaymentAcceptor is Destructible, Contactable {
     }
 
     function processPayment(
-        address merchantWallet,
-        MerchantDealsHistory merchantHistory,
-        uint dealHash) 
+        address _merchantWallet,
+        uint _merchantReputation,
+        uint _clientReputation,
+        MerchantDealsHistory _merchantHistory,
+        uint _dealHash) 
         external 
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
     {
-        monethaGateway.acceptPayment.value(this.balance)(merchantWallet);
-        merchantHistory.recordDeal(orderId, client, true, dealHash);
+        monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
+        
+        _merchantHistory.recordDeal(orderId, client, _clientReputation, _merchantReputation, true, _dealHash);
 
         orderId = 0;
         price = 0;
     }
 
-    function changeMonethaGateway(MonethaGateway newGateway) public onlyOwner {
-        require(address(newGateway) != 0x0);
-        monethaGateway = newGateway;
+    function changeMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
+        require(address(_newGateway) != 0x0);
+        monethaGateway = _newGateway;
     }
 }
