@@ -73,6 +73,20 @@ contract PaymentAcceptor is Destructible, Contactable {
         merchantHistory.recordDeal(orderId, client, false, dealHash);
     }
 
+    function cancelOrder(
+        address merchantWallet,
+        MerchantDealsHistory merchantHistory,
+        uint dealHash) 
+        external 
+        atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyOwner
+    {
+        //when client doesn't pay order is cancelled
+        //future: update Client reputation
+
+        orderId = 0;
+        price = 0;
+    }
+
     function processPayment(
         address merchantWallet,
         MerchantDealsHistory merchantHistory,
