@@ -100,6 +100,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
 
+        //update ClientReputation()
         //monethaGateway.updateMerchantReputation()
         
         _merchantHistory.recordDeal(orderId, client, _clientReputation, _merchantReputation, true, _dealHash);
