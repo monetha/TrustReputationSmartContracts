@@ -83,6 +83,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         //when client doesn't pay order is cancelled
         //future: update Client reputation
 
+        //reduce BuyerReputation
+
         orderId = 0;
         price = 0;
     }
@@ -97,6 +99,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
+
+        //monethaGateway.updateMerchantReputation()
         
         _merchantHistory.recordDeal(orderId, client, _clientReputation, _merchantReputation, true, _dealHash);
 
