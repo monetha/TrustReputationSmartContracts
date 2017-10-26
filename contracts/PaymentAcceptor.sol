@@ -96,6 +96,8 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         require(now > creationTime + lifetime);
 
+        //reduce BuyerReputation
+        
         updateReputation(
             _merchantWallet,
             _clientReputation,
@@ -160,6 +162,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
+
+        //update ClientReputation()
         
         updateReputation(
             _merchantWallet,
