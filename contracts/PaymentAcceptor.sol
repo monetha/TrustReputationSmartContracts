@@ -66,22 +66,46 @@ contract PaymentAcceptor is Destructible, Contactable {
         client = msg.sender;
     }
 
-    function refundPayment(MerchantDealsHistory _merchantHistory, uint dealHash) external
+    function refundPayment(
+        MerchantDealsHistory _merchantHistory,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash
+    )   external
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
     {
         client.transfer(this.balance);
-        _merchantHistory.recordDeal(orderId, client, false, _dealHash);
+        
+        _merchantHistory.recordDeal(
+            orderId,
+            client,
+            _clientReputation,
+            _merchantReputation,
+            false,
+            _dealHash
+        );
     }
 
     function cancelOrder(
-        address _merchantWallet,
         MerchantDealsHistory _merchantHistory,
-        uint _dealHash) 
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash
+    ) 
         external 
         atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyOwner
     {
         //when client doesn't pay order is cancelled
         //future: update Client reputation
+
+        _merchantHistory.recordDeal(
+            orderId,
+            client,
+            _clientReputation,
+            _merchantReputation,
+            false,
+            _dealHash
+        );
 
         orderId = 0;
         price = 0;
@@ -89,16 +113,24 @@ contract PaymentAcceptor is Destructible, Contactable {
 
     function processPayment(
         address _merchantWallet,
-        uint _merchantReputation,
-        uint _clientReputation,
         MerchantDealsHistory _merchantHistory,
-        uint _dealHash) 
-        external 
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash
+    ) 
+        external
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
         
-        _merchantHistory.recordDeal(orderId, client, _clientReputation, _merchantReputation, true, _dealHash);
+        _merchantHistory.recordDeal(
+            orderId,
+            client,
+            _clientReputation,
+            _merchantReputation,
+            true,
+            _dealHash
+        );
 
         orderId = 0;
         price = 0;

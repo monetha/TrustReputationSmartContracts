@@ -10,7 +10,14 @@ contract MerchantDealsHistory is Contactable {
     string public merchantId;
     address orderProcessor;
     
-    event DealCompleted(uint indexed orderId, address indexed clientAddress, bool successful, uint dealHash);
+    event DealCompleted(
+        uint orderId,
+        address clientAddress,
+        uint32 clientReputation,
+        uint32 merchantReputation,
+        bool successful,
+        uint dealHash
+    );
 
     function MerchantDealsHistory(string _merchantId, address _orderProcessor) public {
         require(bytes(_merchantId).length > 0);
@@ -23,8 +30,8 @@ contract MerchantDealsHistory is Contactable {
     function recordDeal(
         uint _orderId,
         address _clientAddress,
-        uint _clientReputation,
-        uint _merchantReputation,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
         bool _successful,
         uint _dealHash)
         external
