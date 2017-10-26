@@ -7,6 +7,17 @@ import "./MerchantDealsHistory.sol";
 import './MerchantWallet.sol';
 
 
+/**
+ * State transitions:
+ *
+ * Inactive -(setMerchantId)-> MerchantAssigned
+ * MerchantAssigned -(unassignMerchant)-> Inactive
+ * MerchantAssigned -(assignOrder)-> OrderAssigned
+ * OrderAssigned -(cancelOrder)-> MerchantAssigned
+ * OrderAssigned -(setClient)-> Paid
+ * Paid -(refundPayment)-> MerchantAssigned
+ * Paid -(processPayment)-> MerchantAssigned
+ */
 contract PaymentAcceptor is Destructible, Contactable {
 
     string constant VERSION = "1.0";
@@ -61,37 +72,6 @@ contract PaymentAcceptor is Destructible, Contactable {
         price = _price;
     }
 
-    function () external payable
-        atState(State.OrderAssigned) transition(State.Paid) 
-    {
-        require(msg.value == price);
-        require(this.balance - msg.value == 0); //the order should not be paid already
-
-        client = msg.sender;
-    }
-
-    function refundPayment(
-        MerchantWallet _merchantWallet,
-        uint32 _clientReputation,
-        uint32 _merchantReputation,
-        uint _dealHash
-    )   external
-        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
-    {
-        client.transfer(this.balance);
-        
-        updateReputation(
-            _merchantWallet,
-            _clientReputation,
-            _merchantReputation,
-            false,
-            _dealHash
-        );
-
-        orderId = 0;
-        price = 0;
-    }
-
     function cancelOrder(
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
@@ -104,6 +84,47 @@ contract PaymentAcceptor is Destructible, Contactable {
         //when client doesn't pay order is cancelled
         //future: update Client reputation
 
+        updateReputation(
+            _merchantWallet,
+            _clientReputation,
+            _merchantReputation,
+            false,
+            _dealHash
+        );
+
+        orderId = 0;
+        price = 0;
+    }
+
+    function () external payable
+        atState(State.OrderAssigned)
+    {
+        require(msg.value == price);
+        require(this.balance - msg.value == 0); //the order should not be paid already
+    }
+
+    /**
+     *  set client function decoupled from fallback function
+     *  in order to remain low gas cost for fallback function
+     *  and to enable non-ether payments
+     */
+    function setClient(address _client) external
+        atState(State.OrderAssigned) transition(State.Paid) onlyOwner 
+    {
+        require(_client != 0x0);
+        client = _client;
+    }
+
+    function refundPayment(
+        MerchantWallet _merchantWallet,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash
+    )   external
+        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
+    {
+        client.transfer(this.balance);
+        
         updateReputation(
             _merchantWallet,
             _clientReputation,
