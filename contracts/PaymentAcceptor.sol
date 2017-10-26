@@ -29,6 +29,8 @@ contract PaymentAcceptor is Destructible, Contactable {
     uint public price;
     address public client;
     State public state;
+    uint public lifetime;
+    uint public creationTime;
 
     enum State {Inactive, MerchantAssigned, OrderAssigned, Paid}
 
@@ -42,9 +44,15 @@ contract PaymentAcceptor is Destructible, Contactable {
         state = _state;
     }
 
-    function PaymentAcceptor(string _merchantId, MerchantDealsHistory _merchantHistory, MonethaGateway _monethaGateway) {
+    function PaymentAcceptor(
+        string _merchantId,
+        MerchantDealsHistory _merchantHistory,
+        MonethaGateway _monethaGateway,
+        uint _lifetime
+    ) {
         changeMonethaGateway(_monethaGateway);
         setMerchantId(_merchantId, _merchantHistory);
+        lifetime = _lifetime;
     }
 
     function setMerchantId(string _merchantId, MerchantDealsHistory _merchantHistory) public
@@ -70,8 +78,13 @@ contract PaymentAcceptor is Destructible, Contactable {
 
         orderId = _orderId;
         price = _price;
+        creationTime = now;
     }
 
+    /**
+     *  when client doesn't pay order is cancelled
+     *  in future: update Client reputation
+     */
     function cancelOrder(
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
@@ -81,8 +94,7 @@ contract PaymentAcceptor is Destructible, Contactable {
         external 
         atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyOwner
     {
-        //when client doesn't pay order is cancelled
-        //future: update Client reputation
+        require(now > creationTime + lifetime);
 
         updateReputation(
             _merchantWallet,
@@ -92,8 +104,7 @@ contract PaymentAcceptor is Destructible, Contactable {
             _dealHash
         );
 
-        orderId = 0;
-        price = 0;
+        resetOrder();
     }
 
     function () external payable
@@ -101,6 +112,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         require(msg.value == price);
         require(this.balance - msg.value == 0); //the order should not be paid already
+        require(now <= creationTime + lifetime);
     }
 
     /**
@@ -133,8 +145,7 @@ contract PaymentAcceptor is Destructible, Contactable {
             _dealHash
         );
 
-        orderId = 0;
-        price = 0;
+        resetOrder();
     }
 
     function processPayment(
@@ -158,8 +169,7 @@ contract PaymentAcceptor is Destructible, Contactable {
             _dealHash
         );
 
-        orderId = 0;
-        price = 0;
+        resetOrder();
     }
 
     function changeMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
@@ -185,5 +195,11 @@ contract PaymentAcceptor is Destructible, Contactable {
         );
 
         _merchantWallet.setCompositeReputation("total", _merchantReputation);
+    }
+
+    function resetOrder() internal {
+        orderId = 0;
+        price = 0;
+        creationTime = 0;
     }
 }
