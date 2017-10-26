@@ -117,7 +117,9 @@ contract PaymentAcceptor is Destructible, Contactable {
     }
 
     function processPayment(
-        MerchantWallet _merchantWallet,
+        MerchantWallet _merchantWallet, //merchantWallet is passing as a parameter 
+                                        //for possibility to dynamically change it, 
+                                        //if merchant requests for change
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
