@@ -3,9 +3,10 @@ pragma solidity 0.4.15;
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
+import './Restricted.sol';
 
 
-contract MerchantWallet is Pausable, Destructible, Contactable {
+contract MerchantWallet is Pausable, Destructible, Contactable, Restricted {
     
     string constant VERSION = "1.0";
 
@@ -24,7 +25,9 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         _;
     }
 
-    function MerchantWallet(address _merchantAccount, string _merchantId) {
+    function MerchantWallet(address _merchantAccount, string _merchantId, address _processor)
+        public Restricted(_processor)
+    {
         require(_merchantAccount != 0x0);
         require(bytes(_merchantId).length > 0);
         
@@ -55,7 +58,7 @@ contract MerchantWallet is Pausable, Destructible, Contactable {
         paymentSettingsMap[key] = value;
     }
 
-    function setCompositeReputation(string key, uint32 value) external onlyOwner {
+    function setCompositeReputation(string key, uint32 value) external onlyProcessor {
         compositeReputationMap[key] = value;
     }
 

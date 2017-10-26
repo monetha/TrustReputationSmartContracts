@@ -4,6 +4,7 @@ import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./MonethaGateway.sol";
 import "./MerchantDealsHistory.sol";
+import './MerchantWallet.sol';
 
 
 contract PaymentAcceptor is Destructible, Contactable {
@@ -11,6 +12,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     string constant VERSION = "1.0";
     
     MonethaGateway public monethaGateway;
+    MerchantDealsHistory public merchantHistory;
     string public merchantId;
     uint public orderId;
     uint public price;
@@ -29,22 +31,24 @@ contract PaymentAcceptor is Destructible, Contactable {
         state = _state;
     }
 
-    function PaymentAcceptor(string _merchantId, MonethaGateway _monethaGateway) {
+    function PaymentAcceptor(string _merchantId, MerchantDealsHistory _merchantHistory, MonethaGateway _monethaGateway) {
         changeMonethaGateway(_monethaGateway);
-        setMerchantId(_merchantId);
+        setMerchantId(_merchantId, _merchantHistory);
     }
 
-    function setMerchantId(string _merchantId) public
+    function setMerchantId(string _merchantId, MerchantDealsHistory _merchantHistory) public
         atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner 
     {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
+        merchantHistory = _merchantHistory;
     }
 
     function unassignMerchant() external
         atState(State.MerchantAssigned) transition(State.Inactive) onlyOwner
     {
         merchantId = "";
+        merchantHistory = MerchantDealsHistory(0x0);
     }
 
     function assignOrder(uint _orderId, uint _price) external
@@ -67,7 +71,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     }
 
     function refundPayment(
-        MerchantDealsHistory _merchantHistory,
+        MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
@@ -76,18 +80,20 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         client.transfer(this.balance);
         
-        _merchantHistory.recordDeal(
-            orderId,
-            client,
+        updateReputation(
+            _merchantWallet,
             _clientReputation,
             _merchantReputation,
             false,
             _dealHash
         );
+
+        orderId = 0;
+        price = 0;
     }
 
     function cancelOrder(
-        MerchantDealsHistory _merchantHistory,
+        MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
@@ -98,9 +104,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         //when client doesn't pay order is cancelled
         //future: update Client reputation
 
-        _merchantHistory.recordDeal(
-            orderId,
-            client,
+        updateReputation(
+            _merchantWallet,
             _clientReputation,
             _merchantReputation,
             false,
@@ -112,8 +117,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     }
 
     function processPayment(
-        address _merchantWallet,
-        MerchantDealsHistory _merchantHistory,
+        MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
@@ -123,9 +127,8 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
         
-        _merchantHistory.recordDeal(
-            orderId,
-            client,
+        updateReputation(
+            _merchantWallet,
             _clientReputation,
             _merchantReputation,
             true,
@@ -139,5 +142,25 @@ contract PaymentAcceptor is Destructible, Contactable {
     function changeMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
         require(address(_newGateway) != 0x0);
         monethaGateway = _newGateway;
+    }
+
+    function updateReputation(
+        MerchantWallet _merchantWallet,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        bool _isSuccess,
+        uint _dealHash
+    ) internal 
+    {
+        merchantHistory.recordDeal(
+            orderId,
+            client,
+            _clientReputation,
+            _merchantReputation,
+            _isSuccess,
+            _dealHash
+        );
+
+        _merchantWallet.setCompositeReputation("total", _merchantReputation);
     }
 }
