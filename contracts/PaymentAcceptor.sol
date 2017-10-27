@@ -95,10 +95,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyOwner
     {
         require(now > creationTime + lifetime);
-
-        //reduce BuyerReputation
         
-        updateReputation(
+        updateDealConditions(
             _merchantWallet,
             _clientReputation,
             _merchantReputation,
@@ -139,7 +137,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     {
         client.transfer(this.balance);
         
-        updateReputation(
+        updateDealConditions(
             _merchantWallet,
             _clientReputation,
             _merchantReputation,
@@ -162,10 +160,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
-
-        //update ClientReputation()
         
-        updateReputation(
+        updateDealConditions(
             _merchantWallet,
             _clientReputation,
             _merchantReputation,
@@ -181,7 +177,7 @@ contract PaymentAcceptor is Destructible, Contactable {
         monethaGateway = _newGateway;
     }
 
-    function updateReputation(
+    function updateDealConditions(
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
@@ -198,6 +194,7 @@ contract PaymentAcceptor is Destructible, Contactable {
             _dealHash
         );
 
+        //update parties Reputation
         _merchantWallet.setCompositeReputation("total", _merchantReputation);
     }
 
