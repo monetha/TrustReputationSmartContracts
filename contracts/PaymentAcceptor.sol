@@ -4,21 +4,24 @@ import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./MonethaGateway.sol";
 import "./MerchantDealsHistory.sol";
-import './MerchantWallet.sol';
+import "./MerchantWallet.sol";
+import "./Restricted.sol";
 
 
 /**
  * State transitions:
  *
- * Inactive -(setMerchantId)-> MerchantAssigned
+ * Inactive -(setMerchant)-> MerchantAssigned
  * MerchantAssigned -(unassignMerchant)-> Inactive
  * MerchantAssigned -(assignOrder)-> OrderAssigned
  * OrderAssigned -(cancelOrder)-> MerchantAssigned
  * OrderAssigned -(setClient)-> Paid
- * Paid -(refundPayment)-> MerchantAssigned
+ * OrderAssigned -(securePay)-> Paid
+ * Paid -(refundPayment)-> Refunding
+ * Refunding -(withdrawRefund)-> MerchantAssigned
  * Paid -(processPayment)-> MerchantAssigned
  */
-contract PaymentAcceptor is Destructible, Contactable {
+contract PaymentAcceptor is Destructible, Contactable, Restricted {
 
     string constant VERSION = "1.0";
     
@@ -32,7 +35,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     uint public lifetime;
     uint public creationTime;
 
-    enum State {Inactive, MerchantAssigned, OrderAssigned, Paid}
+    enum State {Inactive, MerchantAssigned, OrderAssigned, Paid, Refunding}
 
     modifier atState(State _state) {
         require(_state == state);
@@ -48,14 +51,16 @@ contract PaymentAcceptor is Destructible, Contactable {
         string _merchantId,
         MerchantDealsHistory _merchantHistory,
         MonethaGateway _monethaGateway,
-        uint _lifetime
-    ) {
-        changeMonethaGateway(_monethaGateway);
-        setMerchantId(_merchantId, _merchantHistory);
-        lifetime = _lifetime;
+        uint _lifetime,
+        address _orderProcessor
+    ) Restricted(_orderProcessor)
+    {
+        setMonethaGateway(_monethaGateway);
+        setMerchant(_merchantId, _merchantHistory);
+        setLifetime(_lifetime);
     }
 
-    function setMerchantId(string _merchantId, MerchantDealsHistory _merchantHistory) public
+    function setMerchant(string _merchantId, MerchantDealsHistory _merchantHistory) public
         atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner 
     {
         require(bytes(_merchantId).length > 0);
@@ -71,7 +76,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     }
 
     function assignOrder(uint _orderId, uint _price) external
-        atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyOwner 
+        atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyProcessor 
     {
         require(_orderId != 0);
         require(_price != 0);
@@ -92,7 +97,7 @@ contract PaymentAcceptor is Destructible, Contactable {
         uint _dealHash
     ) 
         external 
-        atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyOwner
+        atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyProcessor
     {
         require(now > creationTime + lifetime);
         
@@ -116,12 +121,26 @@ contract PaymentAcceptor is Destructible, Contactable {
     }
 
     /**
+     *  securePay can be used by client if he wants to securely set client address for refund
+     *  this function require more gas, then fallback function
+     */
+    function securePay() external payable
+        atState(State.OrderAssigned) transition(State.Paid)
+    {
+        require(msg.value == price);
+        require(this.balance - msg.value == 0); //the order should not be paid already
+        require(now <= creationTime + lifetime);
+
+        client = msg.sender;
+    }
+
+    /**
      *  set client function decoupled from fallback function
      *  in order to remain low gas cost for fallback function
      *  and to enable non-ether payments
      */
     function setClient(address _client) external
-        atState(State.OrderAssigned) transition(State.Paid) onlyOwner 
+        atState(State.OrderAssigned) transition(State.Paid) onlyProcessor 
     {
         require(_client != 0x0);
         client = _client;
@@ -133,7 +152,7 @@ contract PaymentAcceptor is Destructible, Contactable {
         uint32 _merchantReputation,
         uint _dealHash
     )   external
-        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
+        atState(State.Paid) transition(State.Refunding) onlyProcessor
     {
         client.transfer(this.balance);
         
@@ -144,7 +163,10 @@ contract PaymentAcceptor is Destructible, Contactable {
             false,
             _dealHash
         );
+    }
 
+    function withdrawRefund() external atState(State.Refunding) transition(State.MerchantAssigned) {
+        client.transfer(this.balance);
         resetOrder();
     }
 
@@ -157,7 +179,7 @@ contract PaymentAcceptor is Destructible, Contactable {
         uint _dealHash
     ) 
         external
-        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner 
+        atState(State.Paid) transition(State.MerchantAssigned) onlyProcessor 
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
         
@@ -172,9 +194,14 @@ contract PaymentAcceptor is Destructible, Contactable {
         resetOrder();
     }
 
-    function changeMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
+    function setMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
         require(address(_newGateway) != 0x0);
         monethaGateway = _newGateway;
+    }
+
+    function setLifetime(uint _lifetime) public onlyOwner {
+        require(_lifetime > 0);
+        lifetime = _lifetime;
     }
 
     function updateDealConditions(
