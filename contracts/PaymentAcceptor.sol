@@ -57,7 +57,7 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     {
         setMonethaGateway(_monethaGateway);
         setMerchant(_merchantId, _merchantHistory);
-        lifetime = _lifetime;
+        setLifetime(_lifetime);
     }
 
     function setMerchant(string _merchantId, MerchantDealsHistory _merchantHistory) public
@@ -199,6 +199,11 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     function setMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
         require(address(_newGateway) != 0x0);
         monethaGateway = _newGateway;
+    }
+
+    function setLifetime(uint _lifetime) public onlyOwner {
+        require(_lifetime > 0);
+        lifetime = _lifetime;
     }
 
     function updateReputation(
