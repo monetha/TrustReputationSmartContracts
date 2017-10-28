@@ -15,6 +15,7 @@ import './MerchantWallet.sol';
  * MerchantAssigned -(assignOrder)-> OrderAssigned
  * OrderAssigned -(cancelOrder)-> MerchantAssigned
  * OrderAssigned -(setClient)-> Paid
+ * OrderAssigned -(securePay)-> Paid
  * Paid -(refundPayment)-> MerchantAssigned
  * Paid -(processPayment)-> MerchantAssigned
  */
@@ -115,6 +116,20 @@ contract PaymentAcceptor is Destructible, Contactable {
         require(msg.value == price);
         require(this.balance - msg.value == 0); //the order should not be paid already
         require(now <= creationTime + lifetime);
+    }
+
+    /**
+     *  securePay can be used by client if he wants to securely set client address for refund
+     *  this function require more gas, then fallback function
+     */
+    function securePay() external payable
+        atState(State.OrderAssigned) transition(State.Paid)
+    {
+        require(msg.value == price);
+        require(this.balance - msg.value == 0); //the order should not be paid already
+        require(now <= creationTime + lifetime);
+
+        client = msg.sender;
     }
 
     /**
