@@ -16,7 +16,8 @@ import './MerchantWallet.sol';
  * OrderAssigned -(cancelOrder)-> MerchantAssigned
  * OrderAssigned -(setClient)-> Paid
  * OrderAssigned -(securePay)-> Paid
- * Paid -(refundPayment)-> MerchantAssigned
+ * Paid -(refundPayment)-> Refunding
+ * Refunding -(withdrawRefund)-> MerchantAssigned
  * Paid -(processPayment)-> MerchantAssigned
  */
 contract PaymentAcceptor is Destructible, Contactable {
@@ -33,7 +34,7 @@ contract PaymentAcceptor is Destructible, Contactable {
     uint public lifetime;
     uint public creationTime;
 
-    enum State {Inactive, MerchantAssigned, OrderAssigned, Paid}
+    enum State {Inactive, MerchantAssigned, OrderAssigned, Paid, Refunding}
 
     modifier atState(State _state) {
         require(_state == state);
@@ -150,10 +151,8 @@ contract PaymentAcceptor is Destructible, Contactable {
         uint32 _merchantReputation,
         uint _dealHash
     )   external
-        atState(State.Paid) transition(State.MerchantAssigned) onlyOwner
+        atState(State.Paid) transition(State.Refunding) onlyOwner
     {
-        client.transfer(this.balance);
-        
         updateReputation(
             _merchantWallet,
             _clientReputation,
@@ -161,7 +160,10 @@ contract PaymentAcceptor is Destructible, Contactable {
             false,
             _dealHash
         );
+    }
 
+    function withdrawRefund() external atState(State.Refunding) transition(State.MerchantAssigned) {
+        client.transfer(this.balance);
         resetOrder();
     }
 
