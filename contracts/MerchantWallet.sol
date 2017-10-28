@@ -1,12 +1,12 @@
 pragma solidity 0.4.15;
 
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
-import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
-import './Restricted.sol';
+import "./Restricted.sol";
+import "./SafeDestructible.sol";
 
 
-contract MerchantWallet is Pausable, Destructible, Contactable, Restricted {
+contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     
     string constant VERSION = "1.0";
 
