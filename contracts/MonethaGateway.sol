@@ -24,7 +24,7 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
     function acceptPayment(address _merchantWallet) external payable onlyProcessor {
         require(_merchantWallet != 0x0);
 
-        uint merchantIncome = msg.value * (1 - FEE_PROMILLE / 1000);
+        uint merchantIncome = msg.value - (FEE_PROMILLE * msg.value / 1000);
         uint monethaIncome = msg.value - merchantIncome;
 
         _merchantWallet.transfer(merchantIncome);
