@@ -154,8 +154,6 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     )   external
         atState(State.Paid) transition(State.Refunding) onlyProcessor
     {
-        client.transfer(this.balance);
-        
         updateDealConditions(
             _merchantWallet,
             _clientReputation,
