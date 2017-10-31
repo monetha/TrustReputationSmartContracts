@@ -18,7 +18,7 @@ contract Restricted is Ownable {
         _;
     }
 
-    function changeProcessor(address _newProcessor) onlyOwner public {
+    function setProcessor(address _newProcessor) onlyOwner public {
         require(_newProcessor != 0x0);
         processor = _newProcessor;
     }
