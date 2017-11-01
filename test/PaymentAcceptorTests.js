@@ -49,11 +49,11 @@ contract('PaymentAcceptor', function (accounts) {
     })
 
     it('should unassign merchant correctly', async () => {
-        await checkState(State.MerchantAssigned)
+        await checkState(acceptor, State.MerchantAssigned)
 
         await acceptor.unassignMerchant({ from: OWNER })
 
-        await checkState(State.Inactive)
+        await checkState(acceptor, State.Inactive)
     })
 
     it('should set merchant correctly', async () => {
@@ -64,7 +64,7 @@ contract('PaymentAcceptor', function (accounts) {
         merchant.should.equal("merchantId2")
         history.should.equal(MerchantDealsHistory.address)
 
-        await checkState(State.MerchantAssigned)
+        await checkState(acceptor, State.MerchantAssigned)
     })
 
     it('should assign order correctly', async () => {
@@ -75,7 +75,7 @@ contract('PaymentAcceptor', function (accounts) {
         orderId.should.bignumber.equal(123)
         price.should.bignumber.equal(PRICE)
 
-        await checkState(State.OrderAssigned)
+        await checkState(acceptor, State.OrderAssigned)
     })
 
     it('should not allow to cancel before order lifetime', () => {
@@ -91,17 +91,26 @@ contract('PaymentAcceptor', function (accounts) {
     })
 
     it('should cancel order correctly after order lifetime', async () => {
+        const clientReputation = randomReputation()
+        const merchantReputation = randomReputation()
+
         await utils.increaseTime(LIFETIME + 1)
 
-        await acceptor.cancelOrder(
+        const result = await acceptor.cancelOrder(
             MerchantWallet.address,
-            1,
-            2,
+            clientReputation,
+            merchantReputation,
             0x1234,
             { from: PROCESSOR }
         )
-        //TODO: check reputaion
-        await checkState(State.MerchantAssigned)
+        
+        await checkReputation(
+            await MerchantWallet.deployed(),
+            result,
+            clientReputation,
+            merchantReputation
+        )
+        await checkState(acceptor, State.MerchantAssigned)
     })
 
     it('should not allow to send invalid amount of money', () => {
@@ -135,7 +144,7 @@ contract('PaymentAcceptor', function (accounts) {
         const balance = new BigNumber(web3.eth.getBalance(acceptor.address))
         balance.should.bignumber.equal(PRICE)
 
-        await checkState(State.Paid)
+        await checkState(acceptor, State.Paid)
     })
 
     it('should accept payment correctly', async () => {
@@ -146,7 +155,7 @@ contract('PaymentAcceptor', function (accounts) {
         const balance = new BigNumber(web3.eth.getBalance(acceptor.address))
         balance.should.bignumber.equal(PRICE)
 
-        await checkState(State.OrderAssigned)
+        await checkState(acceptor, State.OrderAssigned)
     })
 
     it('should set client correctly', async () => {
@@ -155,14 +164,17 @@ contract('PaymentAcceptor', function (accounts) {
         const client = await acceptor.client()
         client.should.equal(CLIENT)
 
-        await checkState(State.Paid)
+        await checkState(acceptor, State.Paid)
     })
 
     it('should refund payment correctly', async () => {
-        await acceptor.refundPayment(
+        const clientReputation = randomReputation()
+        const merchantReputation = randomReputation()
+
+        const result = await acceptor.refundPayment(
             MerchantWallet.address,
-            1,
-            2,
+            clientReputation,
+            merchantReputation,
             0x1234,
             { from: PROCESSOR }
         )
@@ -170,7 +182,13 @@ contract('PaymentAcceptor', function (accounts) {
         const balance = new BigNumber(web3.eth.getBalance(acceptor.address))
         balance.should.bignumber.equal(PRICE)
 
-        await checkState(State.Refunding)
+        await checkReputation(
+            await MerchantWallet.deployed(),
+            result,
+            clientReputation,
+            merchantReputation
+        )
+        await checkState(acceptor, State.Refunding)
     })
 
     it('should withdraw refund correctly', async () => {
@@ -185,17 +203,20 @@ contract('PaymentAcceptor', function (accounts) {
         delta.should.bignumber.equal(PRICE)
         acceptorBalance.should.bignumber.equal(0)
 
-        await checkState(State.MerchantAssigned)
+        await checkState(acceptor, State.MerchantAssigned)
     })
 
     it('should process payment correctly', async () => {
+        const clientReputation = randomReputation()
+        const merchantReputation = randomReputation()
+
         acceptor = await setupNewWithOrder()
         await acceptor.securePay({ from: CLIENT, value: PRICE })
 
-        await acceptor.processPayment(
+        const result = await acceptor.processPayment(
             MerchantWallet.address,
-            1,
-            2,
+            clientReputation,
+            merchantReputation,
             0x1234,
             { from: PROCESSOR }
         )
@@ -203,7 +224,13 @@ contract('PaymentAcceptor', function (accounts) {
         const acceptorBalance = new BigNumber(web3.eth.getBalance(acceptor.address))
         acceptorBalance.should.bignumber.equal(0)
 
-        await checkState(State.MerchantAssigned)
+        await checkReputation(
+            await MerchantWallet.deployed(),
+            result,
+            clientReputation,
+            merchantReputation
+        )
+        await checkState(acceptor, State.MerchantAssigned)
     })
 
     it('should set Monetha gateway correctly', async () => {
@@ -220,10 +247,21 @@ contract('PaymentAcceptor', function (accounts) {
         lifetime.should.bignumber.equal(1)
     })
 
-    async function checkState(expected) {
+    async function checkState(acceptor, expected) {
         const current = new BigNumber(await acceptor.state())
         current.should.bignumber.equal(expected)
-        console.log('State check passed: ' + expected)
+    }
+
+    async function checkReputation(
+        merchantWallet,
+        result,
+        expectedClientReputation,
+        expectedMerchantReputation
+    ) {
+        //TODO: add client reputation check, once client wallet will be implemented
+
+        const merchRep = new BigNumber(await merchantWallet.compositeReputation("total"))
+        merchRep.should.bignumber.equal(expectedMerchantReputation)
     }
 
     async function setupNewWithOrder() {
@@ -238,5 +276,9 @@ contract('PaymentAcceptor', function (accounts) {
         await res.assignOrder(123, PRICE, { from: PROCESSOR })
 
         return res
+    }
+
+    function randomReputation(){
+        return Math.floor(Math.random() * 100)
     }
 })
