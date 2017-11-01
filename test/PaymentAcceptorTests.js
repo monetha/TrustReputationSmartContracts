@@ -104,6 +104,26 @@ contract('PaymentAcceptor', function (accounts) {
         await checkState(State.MerchantAssigned)
     })
 
+    it('should not allow to send invalid amount of money', () => {
+        return setupNewWithOrder()
+            .then(a => a.securePay({ from: CLIENT, value: PRICE - 1 }))
+            .should.be.rejected
+    })
+
+    it('should not allow to pay twice', () => {
+        return setupNewWithOrder()
+            .then(a => a.securePay({ from: CLIENT, value: PRICE }))
+            .then(a => a.securePay({ from: CLIENT, value: PRICE }))
+            .should.be.rejected
+    })
+
+    it('should not allow to pay after order expired', () => {
+        return setupNewWithOrder()
+            .then(() => utils.increaseTime(LIFETIME + 1))
+            .then(a => a.securePay({ from: CLIENT, value: PRICE }))
+            .should.be.rejected
+    })
+
     it('should accept secure payment correctly', async () => {
         acceptor = await setupNewWithOrder()
 
@@ -118,10 +138,6 @@ contract('PaymentAcceptor', function (accounts) {
         await checkState(State.Paid)
     })
 
-    //should not allow to send invalid amount of money
-    //should not allow to pay twice
-    //should not allow to pay after order expired
-
     it('should accept payment correctly', async () => {
         acceptor = await setupNewWithOrder()
 
@@ -134,7 +150,7 @@ contract('PaymentAcceptor', function (accounts) {
     })
 
     it('should set client correctly', async () => {
-        await acceptor.setClient(CLIENT, {from: PROCESSOR})
+        await acceptor.setClient(CLIENT, { from: PROCESSOR })
 
         const client = await acceptor.client()
         client.should.equal(CLIENT)
@@ -160,12 +176,12 @@ contract('PaymentAcceptor', function (accounts) {
     it('should withdraw refund correctly', async () => {
         const clientBalance1 = new BigNumber(web3.eth.getBalance(CLIENT))
 
-        await acceptor.withdrawRefund({from: UNKNOWN})
+        await acceptor.withdrawRefund({ from: UNKNOWN })
 
         const clientBalance2 = new BigNumber(web3.eth.getBalance(CLIENT))
         const delta = clientBalance2.minus(clientBalance1)
         const acceptorBalance = new BigNumber(web3.eth.getBalance(acceptor.address))
-        
+
         delta.should.bignumber.equal(PRICE)
         acceptorBalance.should.bignumber.equal(0)
 
@@ -186,7 +202,7 @@ contract('PaymentAcceptor', function (accounts) {
 
         const acceptorBalance = new BigNumber(web3.eth.getBalance(acceptor.address))
         acceptorBalance.should.bignumber.equal(0)
-        
+
         await checkState(State.MerchantAssigned)
     })
 
