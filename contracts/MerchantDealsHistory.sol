@@ -3,6 +3,10 @@ pragma solidity 0.4.15;
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import './Restricted.sol';
 
+/**
+ * Order conditions together with parties reputation is stored for each deal
+ * This history enables to see evolution of trust rating for both parties
+ */
 
 contract MerchantDealsHistory is Contactable, Restricted {
 

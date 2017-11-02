@@ -5,6 +5,10 @@ import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./Restricted.sol";
 import "./SafeDestructible.sol";
 
+/**
+ * Public Merchant profile with latest trust and reputation
+ *
+ */
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     

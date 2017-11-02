@@ -9,18 +9,20 @@ import "./Restricted.sol";
 
 
 /**
- * State transitions:
+ * Each Merchant is assigned a pool of PaymentAcceptors that ensure order processing with Trust and Reputation
  *
- * Inactive -(setMerchant)-> MerchantAssigned
- * MerchantAssigned -(unassignMerchant)-> Inactive
- * MerchantAssigned -(assignOrder)-> OrderAssigned
- * OrderAssigned -(cancelOrder)-> MerchantAssigned
- * OrderAssigned -(setClient)-> Paid
- * OrderAssigned -(securePay)-> Paid
- * Paid -(refundPayment)-> Refunding
- * Refunding -(withdrawRefund)-> MerchantAssigned
- * Paid -(processPayment)-> MerchantAssigned
+ * Payment Acceptor State Transitions:
+ * Inactive -(setMerchant) -> MerchantAssigned
+ * MerchantAssigned -(unassignMerchant) -> Inactive
+ * MerchantAssigned -(assignOrder) -> OrderAssigned
+ * OrderAssigned -(cancelOrder) -> MerchantAssigned
+ * OrderAssigned -(setClient) -> Paid
+ * OrderAssigned -(securePay) -> Paid
+ * Paid -(refundPayment) -> Refunding
+ * Refunding -(withdrawRefund) -> MerchantAssigned
+ * Paid -(processPayment) -> MerchantAssigned
  */
+ 
 contract PaymentAcceptor is Destructible, Contactable, Restricted {
 
     string constant VERSION = "1.0";
@@ -60,6 +62,9 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         setLifetime(_lifetime);
     }
 
+    /**
+     *  PaymentAcceptor pool is dynamic for Merchant
+     */
     function setMerchant(string _merchantId, MerchantDealsHistory _merchantHistory) public
         atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner 
     {
@@ -75,6 +80,9 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         merchantHistory = MerchantDealsHistory(0x0);
     }
 
+    /**
+     *  when client initiates order payment acceptor is assigned to process payment for the order
+     */
     function assignOrder(uint _orderId, uint _price) external
         atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyProcessor 
     {
@@ -146,6 +154,9 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         client = _client;
     }
 
+    /**
+     *  In case order can not be processed funds will be returned to client
+     */
     function refundPayment(
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
