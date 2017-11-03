@@ -9,6 +9,7 @@ import "./Restricted.sol";
 
 
 /**
+ * @title PaymentAcceptor
  * Each Merchant is assigned a pool of PaymentAcceptors that ensure order processing with Trust and Reputation
  *
  * Payment Acceptor State Transitions:
@@ -22,28 +23,53 @@ import "./Restricted.sol";
  * Refunding -(withdrawRefund) -> MerchantAssigned
  * Paid -(processPayment) -> MerchantAssigned
  */
- 
+
 contract PaymentAcceptor is Destructible, Contactable, Restricted {
 
     string constant VERSION = "1.0";
-    
+
+    /// MonethaGateway contract for payment processing
     MonethaGateway public monethaGateway;
+
+    /// MerchantDealsHistory contract of acceptor's merchant
     MerchantDealsHistory public merchantHistory;
+
+    /// Merchant of the acceptor
     string public merchantId;
+
+    /// Identifier of the current order
     uint public orderId;
+
+    /// Price of the current order
     uint public price;
+
+    /// Address of the client, who paid the order
     address public client;
+
+    /// Current state of the acceptor
     State public state;
+
+    /// Number of seconds from creationTime, before order will expire
     uint public lifetime;
+
+    /// Time, when order was assigned to the acceptor
     uint public creationTime;
 
     enum State {Inactive, MerchantAssigned, OrderAssigned, Paid, Refunding}
 
+    /**
+     * Asserts current state.
+     * @param _state Expected state
+     */
     modifier atState(State _state) {
         require(_state == state);
         _;
     }
 
+    /**
+     * Performs a transition after function execution.
+     * @param _state Next state
+     */
     modifier transition(State _state) {
         _;
         state = _state;
@@ -63,16 +89,25 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     }
 
     /**
-     *  PaymentAcceptor pool is dynamic for Merchant
+     *  Assign merchant to the acceptor.
+     *  This method used for transferring unitiallized acceptor from Global Acceptor Pool.
+     *  to merchant's pool.
+     *  PaymentAcceptor pool is dynamic for Merchant.
+     *  @param _merchantId Identifier of the merchant
+     *  @param _merchantHistory Address of MerchantDealsHistory contract, which belongs to the merchant
      */
     function setMerchant(string _merchantId, MerchantDealsHistory _merchantHistory) public
-        atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner 
+        atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner
     {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
         merchantHistory = _merchantHistory;
     }
 
+    /**
+     *  Unassign merchant from the acceptor.
+     *  This method used for transferring acceptor back to the Global Acceptor Pool.
+     */
     function unassignMerchant() external
         atState(State.MerchantAssigned) transition(State.Inactive) onlyOwner
     {
@@ -81,10 +116,12 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     }
 
     /**
-     *  when client initiates order payment acceptor is assigned to process payment for the order
+     *  Assigns the acceptor to the order (when client initiates order).
+     *  @param _orderId Identifier of the order
+     *  @param _price Price of the order 
      */
     function assignOrder(uint _orderId, uint _price) external
-        atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyProcessor 
+        atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyProcessor
     {
         require(_orderId != 0);
         require(_price != 0);
@@ -95,20 +132,23 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     }
 
     /**
-     *  when client doesn't pay order is cancelled
-     *  in future: update Client reputation
+     *  cancelOrder is used when client doesn't pay and order need to be cancelled.
+     *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
      */
     function cancelOrder(
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
-    ) 
-        external 
+    )
+        external
         atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyProcessor
     {
         require(now > creationTime + lifetime);
-        
+
         updateDealConditions(
             _merchantWallet,
             _clientReputation,
@@ -120,6 +160,9 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         resetOrder();
     }
 
+    /**
+     *  Fallback function accepts payment for the order.
+     */
     function () external payable
         atState(State.OrderAssigned)
     {
@@ -129,8 +172,8 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     }
 
     /**
-     *  securePay can be used by client if he wants to securely set client address for refund
-     *  this function require more gas, then fallback function
+     *  securePay can be used by client if he wants to securely set client address for refund together with payment.
+     *  This function require more gas, then fallback function.
      */
     function securePay() external payable
         atState(State.OrderAssigned) transition(State.Paid)
@@ -143,19 +186,25 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     }
 
     /**
-     *  set client function decoupled from fallback function
-     *  in order to remain low gas cost for fallback function
-     *  and to enable non-ether payments
+     *  setClient function decoupled from fallback function
+     *      in order to remain low gas cost for fallback function
+     *      and to enable non-ether payments.
+     *  @param _client Address of client's account
      */
     function setClient(address _client) external
-        atState(State.OrderAssigned) transition(State.Paid) onlyProcessor 
+        atState(State.OrderAssigned) transition(State.Paid) onlyProcessor
     {
         require(_client != 0x0);
         client = _client;
     }
 
     /**
-     *  In case order can not be processed funds will be returned to client
+     *  refundPayment used in case order cannot be processed.
+     *  This function initiate process of funds refunding to the client.
+     *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
      */
     function refundPayment(
         MerchantWallet _merchantWallet,
@@ -174,24 +223,34 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         );
     }
 
+    /**
+     *  withdrawRefund performs fund transfer to the client's account.
+     */
     function withdrawRefund() external atState(State.Refunding) transition(State.MerchantAssigned) {
         client.transfer(this.balance);
         resetOrder();
     }
 
+    /**
+     *  processPayment transfer funds to MonethaGateway and completes the order.
+     *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     */
     function processPayment(
-        MerchantWallet _merchantWallet, //merchantWallet is passing as a parameter 
-                                        //for possibility to dynamically change it, 
+        MerchantWallet _merchantWallet, //merchantWallet is passing as a parameter
+                                        //for possibility to dynamically change it,
                                         //if merchant requests for change
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
-    ) 
+    )
         external
-        atState(State.Paid) transition(State.MerchantAssigned) onlyProcessor 
+        atState(State.Paid) transition(State.MerchantAssigned) onlyProcessor
     {
         monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
-        
+
         updateDealConditions(
             _merchantWallet,
             _clientReputation,
@@ -203,23 +262,40 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         resetOrder();
     }
 
+    /**
+     *  setMonethaGateway allows owner to change address of MonethaGateway.
+     *  @param _newGateway Address of new MonethaGateway contract
+     */
     function setMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
         require(address(_newGateway) != 0x0);
         monethaGateway = _newGateway;
     }
 
+    /**
+     *  setLifetime allows owner to change order lifetime.
+     *  @param _lifetime New lifetime of an order
+     */
     function setLifetime(uint _lifetime) public onlyOwner {
         require(_lifetime > 0);
         lifetime = _lifetime;
     }
 
+    /**
+     * updateDealConditions record finalized deal and updates merchant reputation
+     * in future: update Client reputation
+     *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _isSuccess Identifies whether deal was successful or not
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     */
     function updateDealConditions(
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
         bool _isSuccess,
         uint _dealHash
-    ) internal 
+    ) internal
     {
         merchantHistory.recordDeal(
             orderId,
@@ -234,6 +310,9 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         _merchantWallet.setCompositeReputation("total", _merchantReputation);
     }
 
+    /**
+     *  reset order assignment of the acceptor
+     */
     function resetOrder() internal {
         orderId = 0;
         price = 0;
