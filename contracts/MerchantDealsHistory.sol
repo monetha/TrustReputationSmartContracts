@@ -6,7 +6,7 @@ import './Restricted.sol';
 
 /**
  *  @title MerchantDealsHistory
- *  Order conditions together with parties reputation is stored for each deal
+ *  Contract stores hash of deal conditions together with parties reputation for each deal
  *  This history enables to see evolution of trust rating for both parties
  */
 contract MerchantDealsHistory is Contactable, Restricted {

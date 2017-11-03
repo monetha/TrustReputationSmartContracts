@@ -34,7 +34,7 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     /// MerchantDealsHistory contract of acceptor's merchant
     MerchantDealsHistory public merchantHistory;
 
-    /// Merchant of the acceptor
+    /// Merchant identifier, that associates with the acceptor
     string public merchantId;
 
     /// Identifier of the current order
