@@ -75,6 +75,13 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         state = _state;
     }
 
+    /**
+     *  @param _merchantId Merchant of the acceptor
+     *  @param _merchantHistory Address of MerchantDealsHistory contract of acceptor's merchant
+     *  @param _monethaGateway Address of MonethaGateway contract for payment processing
+     *  @param _lifetime Number of seconds from creationTime, before order will expire
+     *  @param _orderProcessor Address of Order Processor account, which operates contract
+     */
     function PaymentAcceptor(
         string _merchantId,
         MerchantDealsHistory _merchantHistory,
@@ -311,7 +318,7 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     }
 
     /**
-     *  reset order assignment of the acceptor
+     *  Reset order assignment of the acceptor
      */
     function resetOrder() internal {
         orderId = 0;
