@@ -3,15 +3,17 @@ pragma solidity 0.4.15;
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import './Restricted.sol';
 
-/**
- * Order conditions together with parties reputation is stored for each deal
- * This history enables to see evolution of trust rating for both parties
- */
 
+/**
+ *  @title MerchantDealsHistory
+ *  Order conditions together with parties reputation is stored for each deal
+ *  This history enables to see evolution of trust rating for both parties
+ */
 contract MerchantDealsHistory is Contactable, Restricted {
 
     string constant VERSION = "1.0";
 
+    ///  Merchant of the acceptor
     string public merchantId;
     
     event DealCompleted(
@@ -23,6 +25,10 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint dealHash
     );
 
+    /**
+     *  @param _merchantId Merchant of the acceptor
+     *  @param _orderProcessor Address of Order Processor account, which operates contract
+     */
     function MerchantDealsHistory(string _merchantId, address _orderProcessor) public
         Restricted(_orderProcessor)
     {
@@ -30,12 +36,21 @@ contract MerchantDealsHistory is Contactable, Restricted {
         merchantId = _merchantId;
     }
 
+    /**
+     *  recordDeal creates an event of completed deal
+     *  @param _orderId Identifier of deal's order
+     *  @param _clientAddress Address of client's account
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _isSuccess Identifies whether deal was successful or not
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     */
     function recordDeal(
         uint _orderId,
         address _clientAddress,
         uint32 _clientReputation,
         uint32 _merchantReputation,
-        bool _successful,
+        bool _isSuccess,
         uint _dealHash)
         external onlyProcessor
     {
@@ -44,7 +59,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
             _clientAddress,
             _clientReputation,
             _merchantReputation,
-            _successful,
+            _isSuccess,
             _dealHash
         );
     }
