@@ -12,7 +12,7 @@ import "./Restricted.sol";
  */
 contract MonethaGateway is Contactable, Destructible, Restricted {
     
-    string constant VERSION = "1.0";
+    string constant VERSION = "0.2";
 
     /**
      *  Fee permille of Monetha fee.

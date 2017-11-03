@@ -12,7 +12,7 @@ import "./SafeDestructible.sol";
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     
-    string constant VERSION = "1.0";
+    string constant VERSION = "0.2";
 
     address public merchantAccount;
 

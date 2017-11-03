@@ -10,7 +10,7 @@ import "./Restricted.sol";
 
 /**
  * @title PaymentAcceptor
- * Each Merchant is assigned a pool of PaymentAcceptors that ensure order processing with Trust and Reputation
+ * Each Merchant is assigned a pool of PaymentAcceptors that ensure payment and order processing with Trust and Reputation
  *
  * Payment Acceptor State Transitions:
  * Inactive -(setMerchant) -> MerchantAssigned
@@ -26,7 +26,7 @@ import "./Restricted.sol";
 
 contract PaymentAcceptor is Destructible, Contactable, Restricted {
 
-    string constant VERSION = "1.0";
+    string constant VERSION = "0.2";
 
     /// MonethaGateway contract for payment processing
     MonethaGateway public monethaGateway;
