@@ -8,7 +8,7 @@
 Serves as a public Merchant profile with merchant profile info, payment settings and latest reputation value. Also it accepts payments for orders.
 
 *  **Merchant's acceptor**
-Process ether payments for orders. Possibility to pay with ERC20 tokens will be added in the future.
+Process ether payments for orders. Possibility to pay with ERC-20 tokens will be added in the future.
 
 *  **Client and Merchant Deals History**
 Contract stores hash of deals conditions together with parties reputation for each deal. This history enables to see evolution of trust rating for both parties.
