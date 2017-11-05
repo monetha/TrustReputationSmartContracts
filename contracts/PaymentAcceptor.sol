@@ -1,5 +1,6 @@
 pragma solidity 0.4.15;
 
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./MonethaGateway.sol";
@@ -25,6 +26,8 @@ import "./Restricted.sol";
  */
 
 contract PaymentAcceptor is Destructible, Contactable, Restricted {
+
+    using SafeMath for uint256;
 
     string constant VERSION = "0.2";
 
@@ -154,7 +157,7 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         external
         atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyProcessor
     {
-        require(now > creationTime + lifetime);
+        require(now > creationTime.add(lifetime));
 
         updateDealConditions(
             _merchantWallet,
@@ -174,8 +177,8 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         atState(State.OrderAssigned)
     {
         require(msg.value == price);
-        require(this.balance - msg.value == 0); //the order should not be paid already
-        require(now <= creationTime + lifetime);
+        require(this.balance.sub(msg.value) == 0); //the order should not be paid already
+        require(now <= creationTime.add(lifetime));
     }
 
     /**
@@ -186,8 +189,8 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         atState(State.OrderAssigned) transition(State.Paid)
     {
         require(msg.value == price);
-        require(this.balance - msg.value == 0); //the order should not be paid already
-        require(now <= creationTime + lifetime);
+        require(this.balance.sub(msg.value) == 0); //the order should not be paid already
+        require(now <= creationTime.add(lifetime));
 
         client = msg.sender;
     }

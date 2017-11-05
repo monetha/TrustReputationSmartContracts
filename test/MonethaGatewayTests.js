@@ -21,7 +21,7 @@ contract('MonethaGateway', function (accounts) {
 
     it('should accept payment correctly', async () => {
         const value = new BigNumber('1e9')
-        const feeCoeff = new BigNumber(await gateway.FEE_PROMILLE()).div(1000)
+        const feeCoeff = new BigNumber(await gateway.FEE_PERMILLE()).div(1000)
 
         const merchantBalance1 = new BigNumber(web3.eth.getBalance(MERCHANT))
         const vaultBalance1 = new BigNumber(web3.eth.getBalance(VAULT))

@@ -1,5 +1,6 @@
 pragma solidity 0.4.15;
 
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./Restricted.sol";
@@ -11,6 +12,8 @@ import "./Restricted.sol";
  *  MonethaGateway forward funds from order payment to merchant's wallet and collects Monetha fee.
  */
 contract MonethaGateway is Contactable, Destructible, Restricted {
+
+    using SafeMath for uint256;
     
     string constant VERSION = "0.2";
 
@@ -19,7 +22,7 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
      *  1 permille (‰) = 0.1 percent (%)
      *  15‰ = 1.5%
      */
-    uint8 public constant FEE_PERMILLE = 15;
+    uint public constant FEE_PERMILLE = 15;
     
     /**
      *  Address of Monetha Vault for fee collection
@@ -47,8 +50,8 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
     function acceptPayment(address _merchantWallet) external payable onlyProcessor {
         require(_merchantWallet != 0x0);
 
-        uint merchantIncome = msg.value - (FEE_PERMILLE * msg.value / 1000);
-        uint monethaIncome = msg.value - merchantIncome;
+        uint merchantIncome = msg.value.sub(FEE_PERMILLE.mul(msg.value).div(1000));
+        uint monethaIncome = msg.value.sub(merchantIncome);
 
         _merchantWallet.transfer(merchantIncome);
         monethaVault.transfer(monethaIncome);
