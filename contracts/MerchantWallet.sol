@@ -9,7 +9,7 @@ import "./SafeDestructible.sol";
  *  @title MerchantWallet
  *  Serves as a public Merchant profile with merchant profile info, 
  *      payment settings and latest reputation value.
- *  Also MerchantWallet accepts payments for orders
+ *  Also MerchantWallet accepts payments for orders.
  */
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {

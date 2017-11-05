@@ -1,13 +1,20 @@
-# Monetha gateway smart contracts**
+# Monetha gateway smart contracts
 
 ## Abstract
 
 
 ## Main components
-*  Merchant Wallet: merchant profile, payment settings, reputation
-*  Merchant's acceptor contracts to process orders and Ethereum based payments
-*  Client and Merchant DealHistory to store deal conditions and be able to track parties reputation dynamics
-*  CLient's Wallet: profile, payment settings, reputation (future)
+*  **Merchant Wallet**
+Serves as a public Merchant profile with merchant profile info, payment settings and latest reputation value. Also it accepts payments for orders.
+
+*  **Merchant's acceptor**
+Process ether payments for orders. Possibility to pay with ERC20 tokens will be added in the future.
+
+*  **Client and Merchant Deals History**
+Contract stores hash of deals conditions together with parties reputation for each deal. This history enables to see evolution of trust rating for both parties.
+
+*  **Client's Wallet (TBD)**
+Client's profile, payment settings and reputation.
 
 ## Prerequisites
 
@@ -29,7 +36,7 @@ truffle test
 
 ## How to deploy to testnet/mainnet
 
-In separate terminal run next your Ethereum node on `8545` port ([Parity](https://parity.io/), for example).
+In separate terminal run your Ethereum node on `8545` port ([Parity](https://parity.io/), for example).
 
 And in main terminal run one of next commans:
 
