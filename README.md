@@ -6,7 +6,7 @@
 ## Main components
 *  Merchant Wallet: merchant profile, payment settings, reputation
 *  Merchant's acceptor contracts to process orders and Ethereum based payments
-*  Client and Merchant DealHistory to store deal conditions
+*  Client and Merchant DealHistory to store deal conditions and be able to track parties reputation dynamics
 *  CLient's Wallet: profile, payment settings, reputation (future)
 
 ## Prerequisites
@@ -43,4 +43,4 @@ For kovan testnet
 truffle migrate --network=kovan
 ```
 
-P.S. you can add settings for another network in `truffle.js` file
+You can add settings for another network in `truffle.js` file

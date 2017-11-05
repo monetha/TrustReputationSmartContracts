@@ -9,7 +9,7 @@ import "./SafeDestructible.sol";
  *  @title MerchantWallet
  *  Serves as a public Merchant profile with merchant profile info, 
  *      payment settings and latest reputation value.
- *  Also MerchantWallet accepts payments for orders the merchant
+ *  Also MerchantWallet accepts payments for orders
  */
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
@@ -19,13 +19,13 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /// Address of merchant's account, that can withdraw from wallet
     address public merchantAccount;
     
-    /// Merchant identifier
+    /// Unique Merchant identifier
     string public merchantId;
 
     /// profileMap stores general information about the merchant
     mapping (string=>string) profileMap;
 
-    /// paymentSettingsMap stores payment settings for the merchant
+    /// paymentSettingsMap stores payment and order settings for the merchant
     mapping (string=>string) paymentSettingsMap;
 
     /// compositeReputationMap stores composite reputation, that compraises from several metrics
