@@ -1,7 +1,24 @@
 # Monetha gateway smart contracts
 
 ## Abstract
+*Universal​ ​decentralized​ ​trust​ ​and​ ​reputation​ platform*
 
+We aim to solve following problems:
+1. Not all online merchants have their trust profile
+Building trust is difficult. It takes time and costs a lot of money. It’s even more difficult for new or small merchants.
+Trust and reputation are extremely important for participants of today’s global commerce.
+
+2. Merchants reputation is not transferable
+Merchants have no​ ​ability​ ​to​ ​transfer​ ​their​ ​trust​ ​rate​ ​from​ one centralized service to another. For example, once you become trusted on Amazon, you still must build your trust *from zero* on other marketplaces or *your* own website.
+
+3. Trust and reputation works two ways
+Since the beginning of online commerce, one of the major problems buyers face is feeling safe before, during and after the purchase. 
+Our goal is to apply the trust and reputation via different functionalities in different stages of purchase:
+*  Before the purchase: Immutable, public, accurate reputation that is always linked to a payment.
+*  During the purchase: Formalising the purchase with a smart contract; Escrow.
+*  After the purchase: Ability to claim.
+
+No more fear, uncertainty or doubt buying online. Monetha aims to bring the same trustful feeling that you have shopped in a famous retail store to any merchant’s shop, anywhere in the world.
 
 ## Main components
 *  **Merchant Wallet**
