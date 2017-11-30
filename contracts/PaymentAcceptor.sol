@@ -10,13 +10,13 @@ import "./Restricted.sol";
 
 
 /**
- * @title PaymentAcceptor
- * Each Merchant is assigned a pool of PaymentAcceptors that ensure payment and order processing with Trust and Reputation
+ * @title PaymentProcessor
+ * Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
  *
  * Payment Acceptor State Transitions:
  * Inactive -(setMerchant) -> MerchantAssigned
  * MerchantAssigned -(unassignMerchant) -> Inactive
- * MerchantAssigned -(assignOrder) -> OrderAssigned
+ * MerchantAssigned -(addOrder) -> OrderAssigned
  * OrderAssigned -(cancelOrder) -> MerchantAssigned
  * OrderAssigned -(setClient) -> Paid
  * OrderAssigned -(securePay) -> Paid
@@ -25,11 +25,11 @@ import "./Restricted.sol";
  * Paid -(processPayment) -> MerchantAssigned
  */
 
-contract PaymentAcceptor is Destructible, Contactable, Restricted {
+contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
 
-    string constant VERSION = "0.2";
+    string constant VERSION = "0.3";
 
     /// MonethaGateway contract for payment processing
     MonethaGateway public monethaGateway;
@@ -40,32 +40,23 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     /// Merchant identifier, that associates with the acceptor
     string public merchantId;
 
-    /// Identifier of the current order
-    uint public orderId;
+    mapping (uint=>Order) public orders;
 
-    /// Price of the current order
-    uint public price;
+    enum State {Null, Paid, Refunding}
 
-    /// Address of the client, who paid the order
-    address public client;
-
-    /// Current state of the acceptor
-    State public state;
-
-    /// Number of seconds from creationTime, before order will expire
-    uint public lifetime;
-
-    /// Time, when order was assigned to the acceptor
-    uint public creationTime;
-
-    enum State {Inactive, MerchantAssigned, OrderAssigned, Paid, Refunding}
+    struct Order {
+        State state;
+        uint price;
+        uint creationTime;
+        address paymentAcceptor;
+    }
 
     /**
      * Asserts current state.
      * @param _state Expected state
      */
-    modifier atState(State _state) {
-        require(_state == state);
+    modifier atState(uint orderId, State _state) {
+        require(_state == orders[orderId].state);
         _;
     }
 
@@ -73,56 +64,29 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
      * Performs a transition after function execution.
      * @param _state Next state
      */
-    modifier transition(State _state) {
+    modifier transition(uint orderId, State _state) {
         _;
-        state = _state;
+        orders[orderId].state = _state;
     }
 
     /**
      *  @param _merchantId Merchant of the acceptor
      *  @param _merchantHistory Address of MerchantDealsHistory contract of acceptor's merchant
      *  @param _monethaGateway Address of MonethaGateway contract for payment processing
-     *  @param _lifetime Number of seconds from creationTime, before order will expire
-     *  @param _orderProcessor Address of Order Processor account, which operates contract
+     *  @param _processingAccount Address of Order Processor account, which operates contract
      */
-    function PaymentAcceptor(
+    function PaymentProcessor(
         string _merchantId,
         MerchantDealsHistory _merchantHistory,
         MonethaGateway _monethaGateway,
-        uint _lifetime,
-        address _orderProcessor
-    ) Restricted(_orderProcessor)
-    {
-        setMonethaGateway(_monethaGateway);
-        setMerchant(_merchantId, _merchantHistory);
-        setLifetime(_lifetime);
-    }
-
-    /**
-     *  Assign merchant to the acceptor.
-     *  This method used for transferring unitiallized acceptor from Global Acceptor Pool.
-     *  to merchant's pool.
-     *  PaymentAcceptor pool is dynamic for Merchant.
-     *  @param _merchantId Identifier of the merchant
-     *  @param _merchantHistory Address of MerchantDealsHistory contract, which belongs to the merchant
-     */
-    function setMerchant(string _merchantId, MerchantDealsHistory _merchantHistory) public
-        atState(State.Inactive) transition(State.MerchantAssigned) onlyOwner
+        address _processingAccount
+    ) Restricted(_processingAccount)
     {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
         merchantHistory = _merchantHistory;
-    }
 
-    /**
-     *  Unassign merchant from the acceptor.
-     *  This method used for transferring acceptor back to the Global Acceptor Pool.
-     */
-    function unassignMerchant() external
-        atState(State.MerchantAssigned) transition(State.Inactive) onlyOwner
-    {
-        merchantId = "";
-        merchantHistory = MerchantDealsHistory(0x0);
+        setMonethaGateway(_monethaGateway);
     }
 
     /**
@@ -130,8 +94,7 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
      *  @param _orderId Identifier of the order
      *  @param _price Price of the order 
      */
-    function assignOrder(uint _orderId, uint _price) external
-        atState(State.MerchantAssigned) transition(State.OrderAssigned) onlyProcessor
+    function addOrder(uint _orderId, uint _price) external onlyProcessor
     {
         require(_orderId != 0);
         require(_price != 0);
@@ -139,6 +102,12 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
         orderId = _orderId;
         price = _price;
         creationTime = now;
+        orders[_orderId] = Order({
+            state: State.Paid,
+            price: _price,
+            paymentTime: now,
+            paymentAcceptor: msg.sender
+        });
     }
 
     /**
@@ -279,15 +248,6 @@ contract PaymentAcceptor is Destructible, Contactable, Restricted {
     function setMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
         require(address(_newGateway) != 0x0);
         monethaGateway = _newGateway;
-    }
-
-    /**
-     *  setLifetime allows owner to change order lifetime.
-     *  @param _lifetime New lifetime of an order
-     */
-    function setLifetime(uint _lifetime) public onlyOwner {
-        require(_lifetime > 0);
-        lifetime = _lifetime;
     }
 
     /**
