@@ -80,7 +80,7 @@ contract DealProcessor is Destructible, Contactable, Restricted {
      *  @param _monethaGateway Address of MonethaGateway contract for payment processing
      *  @param _processingAccount Address of Order Processor account, which operates contract
      */
-    function DealProcessor(
+    function PaymentProcessor(
         string _merchantId,
         MerchantDealsHistory _merchantHistory,
         MonethaGateway _monethaGateway,
