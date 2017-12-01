@@ -87,11 +87,11 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _processingAccount
     ) Restricted(_processingAccount)
     {
-        // require(bytes(_merchantId).length > 0);
-        // merchantId = _merchantId;
-        // merchantHistory = _merchantHistory;
+        require(bytes(_merchantId).length > 0);
+        merchantId = _merchantId;
+        merchantHistory = _merchantHistory;
 
-        // setMonethaGateway(_monethaGateway);
+        setMonethaGateway(_monethaGateway);
     }
 
     /**
