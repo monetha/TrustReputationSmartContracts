@@ -25,6 +25,10 @@ import "./Restricted.sol";
  * Paid -(processPayment) -> MerchantAssigned
  */
 
+
+//TODO: remove price check, add origin address and temp address
+//TODO: refund to origin address
+
 contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
@@ -42,13 +46,14 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     mapping (uint=>Order) public orders;
 
-    enum State {Null, Paid, Refunding}
+    enum State {Null, Created, Paid, Finalized, Refunding, Cancelled}
 
     struct Order {
         State state;
         uint price;
         uint creationTime;
         address paymentAcceptor;
+        address originAddress;
     }
 
     /**
@@ -82,11 +87,11 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _processingAccount
     ) Restricted(_processingAccount)
     {
-        require(bytes(_merchantId).length > 0);
-        merchantId = _merchantId;
-        merchantHistory = _merchantHistory;
+        // require(bytes(_merchantId).length > 0);
+        // merchantId = _merchantId;
+        // merchantHistory = _merchantHistory;
 
-        setMonethaGateway(_monethaGateway);
+        // setMonethaGateway(_monethaGateway);
     }
 
     /**
@@ -94,87 +99,36 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _orderId Identifier of the order
      *  @param _price Price of the order 
      */
-    function addOrder(uint _orderId, uint _price) external onlyProcessor
+    function addOrder(
+        uint _orderId,
+        uint _price,
+        address _paymentAcceptor,
+        address _originAddress
+    ) external onlyProcessor atState(_orderId, State.Null)
     {
         require(_orderId != 0);
         require(_price != 0);
 
-        orderId = _orderId;
-        price = _price;
-        creationTime = now;
         orders[_orderId] = Order({
-            state: State.Paid,
+            state: State.Created,
             price: _price,
-            paymentTime: now,
-            paymentAcceptor: msg.sender
+            creationTime: now,
+            paymentAcceptor: _paymentAcceptor,
+            originAddress: _originAddress
         });
-    }
-
-    /**
-     *  cancelOrder is used when client doesn't pay and order need to be cancelled.
-     *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
-     *  @param _clientReputation Updated reputation of the client
-     *  @param _merchantReputation Updated reputation of the merchant
-     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
-     */
-    function cancelOrder(
-        MerchantWallet _merchantWallet,
-        uint32 _clientReputation,
-        uint32 _merchantReputation,
-        uint _dealHash
-    )
-        external
-        atState(State.OrderAssigned) transition(State.MerchantAssigned) onlyProcessor
-    {
-        require(now > creationTime.add(lifetime));
-
-        updateDealConditions(
-            _merchantWallet,
-            _clientReputation,
-            _merchantReputation,
-            false,
-            _dealHash
-        );
-
-        resetOrder();
-    }
-
-    /**
-     *  Fallback function accepts payment for the order.
-     */
-    function () external payable
-        atState(State.OrderAssigned)
-    {
-        require(msg.value == price);
-        require(this.balance.sub(msg.value) == 0); //the order should not be paid already
-        require(now <= creationTime.add(lifetime));
     }
 
     /**
      *  securePay can be used by client if he wants to securely set client address for refund together with payment.
      *  This function require more gas, then fallback function.
      */
-    function securePay() external payable
-        atState(State.OrderAssigned) transition(State.Paid)
+    function securePay(uint _orderId)
+        external payable
+        atState(_orderId, State.Created) transition(_orderId, State.Paid)
     {
-        require(msg.value == price);
-        require(this.balance.sub(msg.value) == 0); //the order should not be paid already
-        require(now <= creationTime.add(lifetime));
-
-        client = msg.sender;
-    }
-
-    /**
-     *  setClient function decoupled from fallback function
-     *      in order to remain low gas cost for fallback function
-     *      and to enable non-ether payments.
-     *  @param _client Address of client's account
-     */
-    function setClient(address _client) external
-        atState(State.OrderAssigned) transition(State.Paid) onlyProcessor
-    {
-        require(_client != 0x0);
-        client = _client;
+        Order storage order = orders[_orderId];
+        require(msg.sender == order.paymentAcceptor);
+        require(msg.value == order.price);
     }
 
     /**
@@ -186,14 +140,17 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
      */
     function refundPayment(
+        uint _orderId,
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
         uint _dealHash
-    )   external
-        atState(State.Paid) transition(State.Refunding) onlyProcessor
+    )   
+        external
+        atState(_orderId, State.Paid) transition(_orderId, State.Refunding) onlyProcessor
     {
         updateDealConditions(
+            _orderId,
             _merchantWallet,
             _clientReputation,
             _merchantReputation,
@@ -205,9 +162,12 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     /**
      *  withdrawRefund performs fund transfer to the client's account.
      */
-    function withdrawRefund() external atState(State.Refunding) transition(State.MerchantAssigned) {
-        client.transfer(this.balance);
-        resetOrder();
+    function withdrawRefund(uint _orderId) 
+        external
+        atState(_orderId, State.Refunding) transition(_orderId, State.Cancelled) 
+    {
+        Order storage order = orders[_orderId];
+        order.originAddress.transfer(order.price);
     }
 
     /**
@@ -218,6 +178,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
      */
     function processPayment(
+        uint _orderId,
         MerchantWallet _merchantWallet, //merchantWallet is passing as a parameter
                                         //for possibility to dynamically change it,
                                         //if merchant requests for change
@@ -226,19 +187,18 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash
     )
         external
-        atState(State.Paid) transition(State.MerchantAssigned) onlyProcessor
+        atState(_orderId, State.Paid) transition(_orderId, State.Finalized) onlyProcessor
     {
-        monethaGateway.acceptPayment.value(this.balance)(_merchantWallet);
+        monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
         updateDealConditions(
+            _orderId,
             _merchantWallet,
             _clientReputation,
             _merchantReputation,
             true,
             _dealHash
         );
-
-        resetOrder();
     }
 
     /**
@@ -260,6 +220,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
      */
     function updateDealConditions(
+        uint _orderId,
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
@@ -268,8 +229,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     ) internal
     {
         merchantHistory.recordDeal(
-            orderId,
-            client,
+            _orderId,
+            orders[_orderId].originAddress,
             _clientReputation,
             _merchantReputation,
             _isSuccess,
@@ -278,14 +239,5 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
 
         //update parties Reputation
         _merchantWallet.setCompositeReputation("total", _merchantReputation);
-    }
-
-    /**
-     *  Reset order assignment of the acceptor
-     */
-    function resetOrder() internal {
-        orderId = 0;
-        price = 0;
-        creationTime = 0;
     }
 }
