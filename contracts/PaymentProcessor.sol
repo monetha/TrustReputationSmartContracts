@@ -98,6 +98,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  Assigns the acceptor to the order (when client initiates order).
      *  @param _orderId Identifier of the order
      *  @param _price Price of the order 
+     *  @param _paymentAcceptor order payment acceptor
+     *  @param _originAddress buyer address
      */
     function addOrder(
         uint _orderId,
