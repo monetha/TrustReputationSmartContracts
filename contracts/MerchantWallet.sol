@@ -84,8 +84,18 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  Set profile info by string key
      */
-    function setProfile(string key, string value) external onlyOwner {
-        profileMap[key] = value;
+    function setProfile(
+        string profileKey,
+        string profileValue,
+        string repKey,
+        uint32 repValue
+    ) external onlyOwner
+    {
+        profileMap[profileKey] = profileValue;
+        
+        if (bytes(repKey).length != 0) {
+            compositeReputationMap[repKey] = repValue;
+        }
     }
 
     /**
