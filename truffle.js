@@ -8,7 +8,8 @@ module.exports = {
     kovan: {
       host: "localhost",
       port: 8545,
-      network_id: "42"
+      network_id: "42",
+      gasPrice: 1000000000
     },
     live: {
       host: "localhost",
