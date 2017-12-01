@@ -95,6 +95,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  Assigns the acceptor to the order (when client initiates order).
      *  @param _orderId Identifier of the order
      *  @param _price Price of the order 
+     *  @param _paymentAcceptor order payment acceptor
+     *  @param _originAddress buyer address
      */
     function addOrder(
         uint _orderId,
@@ -103,8 +105,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _originAddress
     ) external onlyProcessor atState(_orderId, State.Null)
     {
-        require(_orderId != 0);
-        require(_price != 0);
+        require(_orderId > 0);
+        require(_price > 0);
 
         orders[_orderId] = Order({
             state: State.Created,
