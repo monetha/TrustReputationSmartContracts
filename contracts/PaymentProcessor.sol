@@ -26,9 +26,6 @@ import "./Restricted.sol";
  */
 
 
-//TODO: remove price check, add origin address and temp address
-//TODO: refund to origin address
-
 contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
@@ -87,11 +84,11 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _processingAccount
     ) Restricted(_processingAccount)
     {
-        // require(bytes(_merchantId).length > 0);
-        // merchantId = _merchantId;
-        // merchantHistory = _merchantHistory;
+        require(bytes(_merchantId).length > 0);
+        merchantId = _merchantId;
+        merchantHistory = _merchantHistory;
 
-        // setMonethaGateway(_monethaGateway);
+        setMonethaGateway(_monethaGateway);
     }
 
     /**
