@@ -10,7 +10,7 @@ import "./Restricted.sol";
 
 
 /**
- * @title PaymentProcessor
+ * @title DealProcessor
  * Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
  *
  * Payment Acceptor State Transitions:
@@ -29,7 +29,7 @@ import "./Restricted.sol";
 //TODO: remove price check, add origin address and temp address
 //TODO: refund to origin address
 
-contract PaymentProcessor is Destructible, Contactable, Restricted {
+contract DealProcessor is Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
 
