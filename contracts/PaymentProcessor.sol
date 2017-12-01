@@ -106,8 +106,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _originAddress
     ) external onlyProcessor atState(_orderId, State.Null)
     {
-        require(_orderId != 0);
-        require(_price != 0);
+        require(_orderId > 0);
+        require(_price > 0);
 
         orders[_orderId] = Order({
             state: State.Created,
