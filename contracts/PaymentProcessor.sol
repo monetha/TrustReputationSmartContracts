@@ -14,15 +14,12 @@ import "./Restricted.sol";
  * Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
  *
  * Payment Processor State Transitions:
- * Inactive -(setMerchant) -> MerchantAssigned
- * MerchantAssigned -(unassignMerchant) -> Inactive
- * MerchantAssigned -(addOrder) -> OrderAssigned
- * OrderAssigned -(cancelOrder) -> MerchantAssigned
- * OrderAssigned -(setClient) -> Paid
- * OrderAssigned -(securePay) -> Paid
+ * Null -(addOrder) -> Created
+ * Created -(securePay) -> Paid
+ * Created -(cancelOrder) -> Cancelled
  * Paid -(refundPayment) -> Refunding
- * Refunding -(withdrawRefund) -> MerchantAssigned
- * Paid -(processPayment) -> MerchantAssigned
+ * Paid -(processPayment) -> Finalized
+ * Refunding -(withdrawRefund) -> Refunded
  */
 
 
