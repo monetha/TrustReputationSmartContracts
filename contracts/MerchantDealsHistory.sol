@@ -73,7 +73,6 @@ contract MerchantDealsHistory is Contactable, Restricted {
         );
     }
 
-
     /**
      *  recordDealCancelReason creates an event of not paid deal that was cancelled 
      *  @param _orderId Identifier of deal's order

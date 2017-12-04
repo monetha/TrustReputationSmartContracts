@@ -5,6 +5,7 @@ import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./Restricted.sol";
 import "./SafeDestructible.sol";
 
+
 /**
  *  @title MerchantWallet
  *  Serves as a public Merchant profile with merchant profile info, 
