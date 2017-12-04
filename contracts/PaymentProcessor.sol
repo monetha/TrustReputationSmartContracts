@@ -43,7 +43,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     mapping (uint=>Order) public orders;
 
-    enum State {Null, Created, Paid, Finalized, Refunding, Cancelled}
+    enum State {Null, Created, Paid, Finalized, Refunding, Refunded, Cancelled}
 
     struct Order {
         State state;
@@ -201,7 +201,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      */
     function withdrawRefund(uint _orderId) 
         external
-        atState(_orderId, State.Refunding) transition(_orderId, State.Cancelled) 
+        atState(_orderId, State.Refunding) transition(_orderId, State.Refunded) 
     {
         Order storage order = orders[_orderId];
         order.originAddress.transfer(order.price);
