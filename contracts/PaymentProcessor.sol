@@ -13,7 +13,7 @@ import "./Restricted.sol";
  * @title PaymentProcessor
  * Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
  *
- * Payment Acceptor State Transitions:
+ * Payment Processor State Transitions:
  * Inactive -(setMerchant) -> MerchantAssigned
  * MerchantAssigned -(unassignMerchant) -> Inactive
  * MerchantAssigned -(addOrder) -> OrderAssigned
@@ -102,7 +102,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _orderId,
         uint _price,
         address _paymentAcceptor,
-        address _originAddress
+        address _originAddress,
+        uint _orderCreationTime
     ) external onlyProcessor atState(_orderId, State.Null)
     {
         require(_orderId > 0);
@@ -111,7 +112,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         orders[_orderId] = Order({
             state: State.Created,
             price: _price,
-            creationTime: now,
+            creationTime: _orderCreationTime,
             paymentAcceptor: _paymentAcceptor,
             originAddress: _originAddress
         });
@@ -128,6 +129,43 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         Order storage order = orders[_orderId];
         require(msg.sender == order.paymentAcceptor);
         require(msg.value == order.price);
+    }
+
+    /**
+     *  cancelOrder is used when client doesn't pay and order need to be cancelled.
+     *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     */
+    function cancelOrder(
+        uint _orderId,
+        MerchantWallet _merchantWallet,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash,
+        string _cancelReason
+    )
+        external
+        atState(_orderId, State.Created) transition (_orderId, State.Cancelled) onlyProcessor
+    {
+        updateDealConditions(
+            _orderId,
+            _merchantWallet,
+            _clientReputation,
+            _merchantReputation,
+            false,
+            _dealHash
+        );
+
+        merchantHistory.recordDealCancelReason(
+            _orderId,
+            orders[_orderId].originAddress,
+            _clientReputation,
+            _merchantReputation,
+            _dealHash,
+            _cancelReason
+        );
     }
 
     /**

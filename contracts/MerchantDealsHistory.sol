@@ -25,6 +25,15 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint dealHash
     );
 
+    event DealCancelationReason(
+        uint orderId,
+        address clientAddress,
+        uint32 clientReputation,
+        uint32 merchantReputation,
+        uint dealHash,
+        string cancelReason
+    );
+
     /**
      *  @param _merchantId Merchant of the acceptor
      *  @param _orderProcessor Address of Order Processor account, which operates contract
@@ -61,6 +70,35 @@ contract MerchantDealsHistory is Contactable, Restricted {
             _merchantReputation,
             _isSuccess,
             _dealHash
+        );
+    }
+
+
+    /**
+     *  recordDealCancelReason creates an event of not paid deal that was cancelled 
+     *  @param _orderId Identifier of deal's order
+     *  @param _clientAddress Address of client's account
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     *  @param _cancelReason deal cancelation reason (text)
+     */
+    function recordDealCancelReason(
+        uint _orderId,
+        address _clientAddress,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash,
+        string _cancelReason)
+        external onlyProcessor
+    {
+        DealCancelationReason(
+            _orderId,
+            _clientAddress,
+            _clientReputation,
+            _merchantReputation,
+            _dealHash,
+            _cancelReason
         );
     }
 }
