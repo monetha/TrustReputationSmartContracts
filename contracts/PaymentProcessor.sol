@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
@@ -10,19 +10,19 @@ import "./Restricted.sol";
 
 
 /**
- * @title PaymentProcessor
- * Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
+ *  @title PaymentProcessor
+ *  Each Merchant has one PaymentProcessor that ensure payment and order processing with Trust and Reputation
  *
- * Payment Processor State Transitions:
- * Inactive -(setMerchant) -> MerchantAssigned
- * MerchantAssigned -(unassignMerchant) -> Inactive
- * MerchantAssigned -(addOrder) -> OrderAssigned
- * OrderAssigned -(cancelOrder) -> MerchantAssigned
- * OrderAssigned -(setClient) -> Paid
- * OrderAssigned -(securePay) -> Paid
- * Paid -(refundPayment) -> Refunding
- * Refunding -(withdrawRefund) -> MerchantAssigned
- * Paid -(processPayment) -> MerchantAssigned
+ *  Payment Processor State Transitions:
+ *  Inactive -(setMerchant) -> MerchantAssigned
+ *  MerchantAssigned -(unassignMerchant) -> Inactive
+ *  MerchantAssigned -(addOrder) -> OrderAssigned
+ *  OrderAssigned -(cancelOrder) -> MerchantAssigned
+ *  OrderAssigned -(setClient) -> Paid
+ *  OrderAssigned -(securePay) -> Paid
+ *  Paid -(refundPayment) -> Refunding
+ *  Refunding -(withdrawRefund) -> MerchantAssigned
+ *  Paid -(processPayment) -> MerchantAssigned
  */
 
 
@@ -55,24 +55,27 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     }
 
     /**
-     * Asserts current state.
-     * @param _state Expected state
+     *  Asserts current state.
+     *  @param _state Expected state
+     *  @param _orderId Order Id
      */
-    modifier atState(uint orderId, State _state) {
-        require(_state == orders[orderId].state);
+    modifier atState(uint _orderId, State _state) {
+        require(_state == orders[_orderId].state);
         _;
     }
 
     /**
-     * Performs a transition after function execution.
-     * @param _state Next state
+     *  Performs a transition after function execution.
+     *  @param _state Next state
+     *  @param _orderId Order Id
      */
-    modifier transition(uint orderId, State _state) {
+    modifier transition(uint _orderId, State _state) {
         _;
-        orders[orderId].state = _state;
+        orders[_orderId].state = _state;
     }
 
     /**
+     *  payment Processor sets Monetha Gateway
      *  @param _merchantId Merchant of the acceptor
      *  @param _merchantHistory Address of MerchantDealsHistory contract of acceptor's merchant
      *  @param _monethaGateway Address of MonethaGateway contract for payment processing
@@ -98,6 +101,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _price Price of the order 
      *  @param _paymentAcceptor order payment acceptor
      *  @param _originAddress buyer address
+     *  @param _orderCreationTime order creation time
      */
     function addOrder(
         uint _orderId,
@@ -111,11 +115,11 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         require(_price > 0);
 
         orders[_orderId] = Order({
-            initialized: true,
-            state: State.Created,
-            price: _price,
-            creationTime: _orderCreationTime,
-            paymentAcceptor: _paymentAcceptor,
+            initialized: true, 
+            state: State.Created, 
+            price: _price, 
+            creationTime: _orderCreationTime, 
+            paymentAcceptor: _paymentAcceptor, 
             originAddress: _originAddress
         });
     }
@@ -123,6 +127,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     /**
      *  securePay can be used by client if he wants to securely set client address for refund together with payment.
      *  This function require more gas, then fallback function.
+     *  @param _orderId Identifier of the order
      */
     function securePay(uint _orderId)
         external payable
@@ -141,6 +146,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _clientReputation Updated reputation of the client
      *  @param _merchantReputation Updated reputation of the merchant
      *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     *  @param _cancelReason Order cancel reason
      */
     function cancelOrder(
         uint _orderId,
@@ -178,6 +184,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     /**
      *  refundPayment used in case order cannot be processed.
      *  This function initiate process of funds refunding to the client.
+     *  @param _orderId Identifier of the order
      *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
      *  @param _clientReputation Updated reputation of the client
      *  @param _merchantReputation Updated reputation of the merchant
@@ -205,6 +212,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     /**
      *  withdrawRefund performs fund transfer to the client's account.
+     *  @param _orderId Identifier of the order
      */
     function withdrawRefund(uint _orderId) 
         external
@@ -218,6 +226,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
 
     /**
      *  processPayment transfer funds to MonethaGateway and completes the order.
+     *  @param _orderId Identifier of the order
      *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
      *  @param _clientReputation Updated reputation of the client
      *  @param _merchantReputation Updated reputation of the merchant
@@ -260,8 +269,9 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     }
 
     /**
-     * updateDealConditions record finalized deal and updates merchant reputation
-     * in future: update Client reputation
+     *  updateDealConditions record finalized deal and updates merchant reputation
+     *  in future: update Client reputation
+     *  @param _orderId Identifier of the order
      *  @param _merchantWallet Address of MerchantWallet, where merchant reputation is stored
      *  @param _clientReputation Updated reputation of the client
      *  @param _merchantReputation Updated reputation of the merchant

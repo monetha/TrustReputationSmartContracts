@@ -51,13 +51,14 @@ contract('PaymentProcessor', function (accounts) {
     })
 
     it('should add order correctly', async () => {
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, { from: PROCESSOR })
+        const CREATION_TIME = Math.floor(Date.now())
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
 
         const order = await processor.orders(ORDER_ID)
-        new BigNumber(order[0]).should.bignumber.equal(State.Created)
-        new BigNumber(order[1]).should.bignumber.equal(PRICE)
-        order[3].should.equal(ACCEPTOR)
-        order[4].should.equal(ORIGIN)
+        new BigNumber(order[1]).should.bignumber.equal(State.Created)
+        new BigNumber(order[2]).should.bignumber.equal(PRICE)
+        order[4].should.equal(ACCEPTOR)
+        order[5].should.equal(ORIGIN)
     })
 
     it('should not allow to send invalid amount of money', () => {
@@ -82,12 +83,12 @@ contract('PaymentProcessor', function (accounts) {
 
     it('should accept secure payment correctly', async () => {
         processor = await setupNewWithOrder()
-
+        
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
-
+        
         const balance = new BigNumber(web3.eth.getBalance(processor.address))
         balance.should.bignumber.equal(PRICE)
-
+        
         await checkState(processor, ORDER_ID, State.Paid)
     })
 
@@ -167,7 +168,7 @@ contract('PaymentProcessor', function (accounts) {
 
     async function checkState(processor, orderID, expected) {
         const order = await processor.orders(orderID)
-        new BigNumber(order[0]).should.bignumber.equal(expected)
+        new BigNumber(order[1]).should.bignumber.equal(expected)
     }
 
     async function checkReputation(
@@ -183,6 +184,7 @@ contract('PaymentProcessor', function (accounts) {
     }
 
     async function setupNewWithOrder() {
+        const CREATION_TIME = Math.floor(Date.now())
         const res = await PaymentProcessor.new(
             "merchantId",
             MerchantDealsHistory.address,
@@ -190,7 +192,7 @@ contract('PaymentProcessor', function (accounts) {
             PROCESSOR
         )
 
-        await res.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, { from: PROCESSOR })
+        await res.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
 
         return res
     }
