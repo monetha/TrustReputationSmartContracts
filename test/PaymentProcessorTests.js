@@ -18,7 +18,8 @@ contract('PaymentProcessor', function (accounts) {
         Paid: 2,
         Finalized: 3,
         Refunding: 4,
-        Cancelled: 5
+        Refunded: 5,
+        Cancelled: 6
     }
 
     const OWNER = accounts[0]
@@ -61,6 +62,16 @@ contract('PaymentProcessor', function (accounts) {
         order[5].should.equal(ORIGIN)
     })
 
+    it('should cancel order correctly', async () => {
+        processor = await setupNewWithOrder()
+
+        await processor.cancelOrder(ORDER_ID, ACCEPTOR, 1234, 1234, 2, "cancel from test", { from: PROCESSOR })
+
+        const order = await processor.orders(ORDER_ID)
+        await checkState(processor, ORDER_ID, State.Cancelled)
+    
+    })
+
     it('should not allow to send invalid amount of money', () => {
         return setupNewWithOrder()
             .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE - 1 }))
@@ -83,7 +94,9 @@ contract('PaymentProcessor', function (accounts) {
 
     it('should accept secure payment correctly', async () => {
         processor = await setupNewWithOrder()
-        
+
+        const order = await processor.orders(ORDER_ID)
+
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
         
         const balance = new BigNumber(web3.eth.getBalance(processor.address))
@@ -112,6 +125,8 @@ contract('PaymentProcessor', function (accounts) {
             merchantReputation
         )
         await checkState(processor, ORDER_ID, State.Refunding)
+
+        const order = await processor.orders(ORDER_ID)
     })
 
     it('should withdraw refund correctly', async () => {
@@ -126,7 +141,7 @@ contract('PaymentProcessor', function (accounts) {
         processorBalance2.minus(processorBalance1).should.bignumber.equal(-PRICE)
         clientBalance2.minus(clientBalance1).should.bignumber.equal(PRICE)
 
-        await checkState(processor, ORDER_ID, State.Cancelled)
+        await checkState(processor, ORDER_ID, State.Refunded)
     })
 
     it('should process payment correctly', async () => {
