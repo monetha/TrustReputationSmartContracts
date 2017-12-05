@@ -112,11 +112,11 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         require(_price > 0);
 
         orders[_orderId] = Order({
-            initialized: true, 
-            state: State.Created, 
-            price: _price, 
-            creationTime: _orderCreationTime, 
-            paymentAcceptor: _paymentAcceptor, 
+            initialized: true,
+            state: State.Created,
+            price: _price,
+            creationTime: _orderCreationTime,
+            paymentAcceptor: _paymentAcceptor,
             originAddress: _originAddress
         });
     }
