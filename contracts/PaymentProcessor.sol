@@ -156,8 +156,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash,
         string _cancelReason
     )
-        external
-        atState(_orderId, State.Created) transition (_orderId, State.Cancelled) onlyProcessor
+        external onlyProcessor
+        atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
         Order storage order = orders[_orderId];
         require(order.initialized);

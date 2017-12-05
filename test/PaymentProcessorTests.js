@@ -65,11 +65,10 @@ contract('PaymentProcessor', function (accounts) {
     it('should cancel order correctly', async () => {
         processor = await setupNewWithOrder()
 
-        await processor.cancelOrder(ORDER_ID, ACCEPTOR, 1234, 1234, 2, "cancel from test", { from: PROCESSOR })
+        await processor.cancelOrder(ORDER_ID, MerchantWallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
 
         const order = await processor.orders(ORDER_ID)
         await checkState(processor, ORDER_ID, State.Cancelled)
-    
     })
 
     it('should not allow to send invalid amount of money', () => {
