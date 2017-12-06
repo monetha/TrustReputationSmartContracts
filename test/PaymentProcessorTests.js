@@ -56,10 +56,10 @@ contract('PaymentProcessor', function (accounts) {
         await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
 
         const order = await processor.orders(ORDER_ID)
-        new BigNumber(order[1]).should.bignumber.equal(State.Created)
-        new BigNumber(order[2]).should.bignumber.equal(PRICE)
-        order[4].should.equal(ACCEPTOR)
-        order[5].should.equal(ORIGIN)
+        new BigNumber(order[0]).should.bignumber.equal(State.Created)
+        new BigNumber(order[1]).should.bignumber.equal(PRICE)
+        order[3].should.equal(ACCEPTOR)
+        order[4].should.equal(ORIGIN)
     })
 
     it('should cancel order correctly', async () => {
@@ -182,7 +182,7 @@ contract('PaymentProcessor', function (accounts) {
 
     async function checkState(processor, orderID, expected) {
         const order = await processor.orders(orderID)
-        new BigNumber(order[1]).should.bignumber.equal(expected)
+        new BigNumber(order[0]).should.bignumber.equal(expected)
     }
 
     async function checkReputation(
