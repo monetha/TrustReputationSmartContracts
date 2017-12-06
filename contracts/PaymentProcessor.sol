@@ -190,8 +190,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash
     )   
-        external
-        atState(_orderId, State.Paid) transition(_orderId, State.Refunding) onlyProcessor
+        external onlyProcessor
+        atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
         updateDealConditions(
             _orderId,
@@ -211,7 +211,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         external
         atState(_orderId, State.Refunding) transition(_orderId, State.Refunded) 
     {
-        order.originAddress.transfer(orders[_orderId].price);
+        Order storage order = orders[_orderId];
+        order.originAddress.transfer(order.price);
     }
 
     /**
@@ -231,8 +232,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash
     )
-        external
-        atState(_orderId, State.Paid) transition(_orderId, State.Finalized) onlyProcessor
+        external onlyProcessor
+        atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
