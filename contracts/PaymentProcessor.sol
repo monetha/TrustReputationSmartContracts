@@ -43,7 +43,6 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     enum State {Null, Created, Paid, Finalized, Refunding, Refunded, Cancelled}
 
     struct Order {
-        bool initialized;
         State state;
         uint price;
         uint creationTime;
@@ -112,7 +111,6 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         require(_price > 0);
 
         orders[_orderId] = Order({
-            initialized: true,
             state: State.Created,
             price: _price,
             creationTime: _orderCreationTime,
@@ -131,7 +129,6 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         atState(_orderId, State.Created) transition(_orderId, State.Paid)
     {
         Order storage order = orders[_orderId];
-        require(order.initialized);
 
         require(msg.sender == order.paymentAcceptor);
         require(msg.value == order.price);
@@ -157,7 +154,6 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
         Order storage order = orders[_orderId];
-        require(order.initialized);
 
         updateDealConditions(
             _orderId,
@@ -194,8 +190,8 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash
     )   
-        external
-        atState(_orderId, State.Paid) transition(_orderId, State.Refunding) onlyProcessor
+        external onlyProcessor
+        atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
         updateDealConditions(
             _orderId,
@@ -216,8 +212,6 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         atState(_orderId, State.Refunding) transition(_orderId, State.Refunded) 
     {
         Order storage order = orders[_orderId];
-        require(order.initialized);
-
         order.originAddress.transfer(order.price);
     }
 
@@ -238,13 +232,10 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash
     )
-        external
-        atState(_orderId, State.Paid) transition(_orderId, State.Finalized) onlyProcessor
+        external onlyProcessor
+        atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
-        Order storage order = orders[_orderId];
-        require(order.initialized);
-
-        monethaGateway.acceptPayment.value(order.price)(_merchantWallet);
+        monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
         updateDealConditions(
             _orderId,
@@ -284,12 +275,9 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash
     ) internal
     {
-        Order storage order = orders[_orderId];
-        require(order.initialized);
-
-        merchantHistory.recordDeal(
+       merchantHistory.recordDeal(
             _orderId,
-            order.originAddress,
+            orders[_orderId].originAddress,
             _clientReputation,
             _merchantReputation,
             _isSuccess,
