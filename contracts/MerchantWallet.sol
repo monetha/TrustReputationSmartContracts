@@ -1,9 +1,10 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./Restricted.sol";
 import "./SafeDestructible.sol";
+
 
 /**
  *  @title MerchantWallet
@@ -84,8 +85,18 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  Set profile info by string key
      */
-    function setProfile(string key, string value) external onlyOwner {
-        profileMap[key] = value;
+    function setProfile(
+        string profileKey,
+        string profileValue,
+        string repKey,
+        uint32 repValue
+    ) external onlyOwner
+    {
+        profileMap[profileKey] = profileValue;
+        
+        if (bytes(repKey).length != 0) {
+            compositeReputationMap[repKey] = repValue;
+        }
     }
 
     /**

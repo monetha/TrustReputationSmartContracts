@@ -21,10 +21,19 @@ contract('MerchantWallet', function (accounts) {
     });
 
     it('should set profile correctly', async () => {
-        await wallet.setProfile("name", "Merchant", { from: OWNER })
+        await wallet.setProfile("name", "Merchant", "", 0, { from: OWNER })
         const res = await wallet.profile("name")
 
         res.should.equal("Merchant")
+    })
+
+    it('should set profile with reputation correctly', async () => {
+        await wallet.setProfile("name", "Merchant", "Total", 5, { from: OWNER })
+        const name = await wallet.profile("name")
+        const rep = new BigNumber(await wallet.compositeReputation("Total"))
+
+        name.should.equal("Merchant")
+        rep.should.bignumber.equal(5)
     })
 
     it('should set paymentSettings correctly', async () => {
