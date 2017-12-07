@@ -114,6 +114,7 @@ contract('PaymentProcessor', function (accounts) {
             clientReputation,
             merchantReputation,
             0x1234,
+            "refundig from tests",
             { from: PROCESSOR }
         )
 

@@ -6,16 +6,17 @@ import './Restricted.sol';
 
 /**
  *  @title MerchantDealsHistory
- *  Contract stores hash of deal conditions together with parties reputation for each deal
+ *  Contract stores hash of Deals conditions together with parties reputation for each deal
  *  This history enables to see evolution of trust rating for both parties
  */
 contract MerchantDealsHistory is Contactable, Restricted {
 
     string constant VERSION = "0.2";
 
-    ///  Merchant of the acceptor
+    ///  Merchant identifier
     string public merchantId;
     
+    //Deal event
     event DealCompleted(
         uint orderId,
         address clientAddress,
@@ -25,6 +26,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint dealHash
     );
 
+    //Deal cancellation event
     event DealCancelationReason(
         uint orderId,
         address clientAddress,
@@ -32,6 +34,16 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 merchantReputation,
         uint dealHash,
         string cancelReason
+    );
+
+    //Deal refund event
+    event DealRefundReason(
+        uint orderId,
+        address clientAddress,
+        uint32 clientReputation,
+        uint32 merchantReputation,
+        uint dealHash,
+        string refundReason
     );
 
     /**
@@ -98,6 +110,34 @@ contract MerchantDealsHistory is Contactable, Restricted {
             _merchantReputation,
             _dealHash,
             _cancelReason
+        );
+    }
+
+/**
+     *  recordDealRefundReason creates an event of not paid deal that was cancelled 
+     *  @param _orderId Identifier of deal's order
+     *  @param _clientAddress Address of client's account
+     *  @param _clientReputation Updated reputation of the client
+     *  @param _merchantReputation Updated reputation of the merchant
+     *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     *  @param _refundReason deal refund reason (text)
+     */
+    function recordDealRefundReason(
+        uint _orderId,
+        address _clientAddress,
+        uint32 _clientReputation,
+        uint32 _merchantReputation,
+        uint _dealHash,
+        string _refundReason)
+        external onlyProcessor
+    {
+        DealRefundReason(
+            _orderId,
+            _clientAddress,
+            _clientReputation,
+            _merchantReputation,
+            _dealHash,
+            _refundReason
         );
     }
 }
