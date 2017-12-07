@@ -131,7 +131,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         string _refundReason)
         external onlyProcessor
     {
-        DealCancelationReason(
+        DealRefundReason(
             _orderId,
             _clientAddress,
             _clientReputation,

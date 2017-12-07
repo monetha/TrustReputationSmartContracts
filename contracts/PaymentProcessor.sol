@@ -153,6 +153,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         external onlyProcessor
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
+        require(bytes(_cancelReason).length > 0);
         Order storage order = orders[_orderId];
 
         updateDealConditions(
@@ -195,6 +196,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         external onlyProcessor
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
+        require(bytes(_refundReason).length > 0);
         Order storage order = orders[_orderId];
 
         updateDealConditions(
@@ -226,15 +228,6 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
     {
         Order storage order = orders[_orderId];
         order.originAddress.transfer(order.price);
-
-        merchantHistory.recordDealCancelReason(
-            _orderId,
-            order.originAddress,
-            _clientReputation,
-            _merchantReputation,
-            _dealHash,
-            "Refunded"
-        );
     }
 
     /**
