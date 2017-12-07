@@ -182,17 +182,21 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _clientReputation Updated reputation of the client
      *  @param _merchantReputation Updated reputation of the merchant
      *  @param _dealHash Hashcode of the deal, describing the order (used for deal verification)
+     *  @param _cancelReason Order refund/cancel reason
      */
     function refundPayment(
         uint _orderId,
         MerchantWallet _merchantWallet,
         uint32 _clientReputation,
         uint32 _merchantReputation,
-        uint _dealHash
+        uint _dealHash,
+        string _cancelReason
     )   
         external onlyProcessor
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
+        Order storage order = orders[_orderId];
+
         updateDealConditions(
             _orderId,
             _merchantWallet,
@@ -200,6 +204,15 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
             _merchantReputation,
             false,
             _dealHash
+        );
+
+        merchantHistory.recordDealCancelReason(
+            _orderId,
+            order.originAddress,
+            _clientReputation,
+            _merchantReputation,
+            _dealHash,
+            _cancelReason
         );
     }
 
