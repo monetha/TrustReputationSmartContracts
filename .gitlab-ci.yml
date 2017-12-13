@@ -1,0 +1,13 @@
+image: node:latest
+
+# This folder is cached between builds
+# http://docs.gitlab.com/ce/ci/yaml/README.html#cache
+cache:
+  paths:
+  - node_modules/
+
+test_contracts:
+  script:
+   - npm install
+   - npm install -g truffle ethereumjs-testrpc
+   - testrpc &> /dev/null & npm test
