@@ -9,5 +9,4 @@ cache:
 test_contracts:
   script:
    - npm install
-   - npm install -g truffle ethereumjs-testrpc
-   - testrpc &> /dev/null & npm test
+   - ./node_modules/bin/testrpc &> /dev/null & ./node_modules/bin/truffle test
