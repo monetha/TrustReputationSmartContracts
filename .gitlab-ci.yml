@@ -6,7 +6,7 @@ cache:
   paths:
   - node_modules/
 
-test_contracts:
+build_and_test_contracts:
   script:
     - npm install
     - ./node_modules/.bin/testrpc &> /dev/null & ./node_modules/.bin/truffle test
