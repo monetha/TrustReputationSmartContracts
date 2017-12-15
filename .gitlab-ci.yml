@@ -12,6 +12,6 @@ build_and_test_contracts:
     - ./node_modules/.bin/testrpc &> /dev/null & ./node_modules/.bin/truffle test
   artifacts:
     paths:
-      - build
+      - build/
     expire_in: 1 month
 
