@@ -1,0 +1,18 @@
+image: node:latest
+
+# This folder is cached between builds
+# http://docs.gitlab.com/ce/ci/yaml/README.html#cache
+cache:
+  paths:
+  - node_modules/
+
+build_and_test_contracts:
+  script:
+    - npm install
+    - ./node_modules/.bin/truffle compile
+    - ./node_modules/.bin/testrpc &> /dev/null & ./node_modules/.bin/truffle test
+  artifacts:
+    paths:
+      - build/
+    expire_in: 1 month
+
