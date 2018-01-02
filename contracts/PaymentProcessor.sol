@@ -154,7 +154,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
-        require(sha3(_merchantHistory.merchantId) == sha3(merchantId));
+        require(sha3(_merchantWallet.merchantId) == sha3(merchantId));
         require(bytes(_cancelReason).length > 0);
 
         Order storage order = orders[_orderId];
@@ -199,7 +199,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
-        require(sha3(_merchantHistory.merchantId) == sha3(merchantId));
+        require(sha3(_merchantWallet.merchantId) == sha3(merchantId));
         require(bytes(_refundReason).length > 0);
 
         Order storage order = orders[_orderId];
@@ -255,7 +255,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
-        require(sha3(_merchantHistory.merchantId) == sha3(merchantId));
+        require(sha3(_merchantWallet.merchantId) == sha3(merchantId));
 
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
