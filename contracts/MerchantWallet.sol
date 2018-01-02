@@ -62,6 +62,13 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     }
 
     /**
+    *  @return merchantId hash
+    */
+    function merchantIdHash() external constant returns (bytes32) {
+        return keccak256(merchantId);
+    }
+
+    /**
      *  @return profile info by string key
      */
     function profile(string key) external constant returns (string) {

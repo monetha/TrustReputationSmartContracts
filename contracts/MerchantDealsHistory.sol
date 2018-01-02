@@ -58,6 +58,13 @@ contract MerchantDealsHistory is Contactable, Restricted {
     }
 
     /**
+    *  @return merchantId hash
+    */
+    function merchantIdHash() external constant returns (bytes32) {
+        return keccak256(merchantId);
+    }
+
+    /**
      *  recordDeal creates an event of completed deal
      *  @param _orderId Identifier of deal's order
      *  @param _clientAddress Address of client's account
