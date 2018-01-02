@@ -154,7 +154,9 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
+        require(_merchantWallet.merchantId = merchantId);
         require(bytes(_cancelReason).length > 0);
+
         Order storage order = orders[_orderId];
 
         updateDealConditions(
@@ -197,7 +199,9 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
+        require(_merchantWallet.merchantId = merchantId);
         require(bytes(_refundReason).length > 0);
+
         Order storage order = orders[_orderId];
 
         updateDealConditions(
@@ -251,6 +255,8 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
+        require(_merchantWallet.merchantId = merchantId);
+        
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
         updateDealConditions(
