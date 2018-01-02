@@ -273,6 +273,15 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
     }
 
     /**
+     *  setMerchantDealsHistory allows owner to change address of MerchantDealsHistory.
+     *  @param _merchantHistory Address of new MerchantDealsHistory contract
+     */
+    function setMerchantDealsHistory(MerchantDealsHistory _merchantHistory) public onlyOwner {
+        require(address(_merchantHistory) != 0x0);
+        merchantHistory = _merchantHistory;
+    }
+
+    /**
      *  updateDealConditions record finalized deal and updates merchant reputation
      *  in future: update Client reputation
      *  @param _orderId Identifier of the order
