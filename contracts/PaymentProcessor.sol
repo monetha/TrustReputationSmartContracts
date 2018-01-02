@@ -274,9 +274,8 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _newGateway Address of new MonethaGateway contract
      */
     function setMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
-        require(_newGateway.merchantId = merchantId);
         require(address(_newGateway) != 0x0);
-        
+
         monethaGateway = _newGateway;
     }
 
