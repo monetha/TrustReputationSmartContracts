@@ -256,7 +256,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
         require(_merchantWallet.merchantId = merchantId);
-        
+
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
         updateDealConditions(
@@ -274,7 +274,9 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _newGateway Address of new MonethaGateway contract
      */
     function setMonethaGateway(MonethaGateway _newGateway) public onlyOwner {
+        require(_newGateway.merchantId = merchantId);
         require(address(_newGateway) != 0x0);
+        
         monethaGateway = _newGateway;
     }
 
@@ -283,7 +285,9 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _merchantHistory Address of new MerchantDealsHistory contract
      */
     function setMerchantDealsHistory(MerchantDealsHistory _merchantHistory) public onlyOwner {
+        require(_merchantHistory.merchantId = merchantId);
         require(address(_merchantHistory) != 0x0);
+
         merchantHistory = _merchantHistory;
     }
 
