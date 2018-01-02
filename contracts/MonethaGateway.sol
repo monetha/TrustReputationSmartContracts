@@ -2,6 +2,7 @@ pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
+import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./Restricted.sol";
 
@@ -11,7 +12,7 @@ import "./Restricted.sol";
  *
  *  MonethaGateway forward funds from order payment to merchant's wallet and collects Monetha fee.
  */
-contract MonethaGateway is Contactable, Destructible, Restricted {
+contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
 
     using SafeMath for uint256;
     
@@ -47,7 +48,7 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
      *      and collects Monetha fee.
      *  @param _merchantWallet address of merchant's wallet for fund transfer
      */
-    function acceptPayment(address _merchantWallet) external payable onlyProcessor {
+    function acceptPayment(address _merchantWallet) external payable onlyProcessor whenNotPaused {
         require(_merchantWallet != 0x0);
 
         uint merchantIncome = msg.value.sub(FEE_PERMILLE.mul(msg.value).div(1000));
@@ -63,7 +64,7 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
      *  changeMonethaVault allows owner to change address of Monetha Vault.
      *  @param newVault New address of Monetha Vault
      */
-    function changeMonethaVault(address newVault) external onlyOwner {
+    function changeMonethaVault(address newVault) external onlyOwner whenNotPaused {
         monethaVault = newVault;
     }
 }

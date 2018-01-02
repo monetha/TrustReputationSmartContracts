@@ -1,6 +1,7 @@
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "zeppelin-solidity/contracts/lifecycle/Destructible.sol";
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import "./MonethaGateway.sol";
@@ -23,7 +24,7 @@ import "./Restricted.sol";
  */
 
 
-contract PaymentProcessor is Destructible, Contactable, Restricted {
+contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
 
@@ -105,7 +106,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _paymentAcceptor,
         address _originAddress,
         uint _orderCreationTime
-    ) external onlyProcessor atState(_orderId, State.Null)
+    ) external onlyProcessor whenNotPaused atState(_orderId, State.Null)
     {
         require(_orderId > 0);
         require(_price > 0);
@@ -125,7 +126,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _orderId Identifier of the order
      */
     function securePay(uint _orderId)
-        external payable
+        external payable whenNotPaused
         atState(_orderId, State.Created) transition(_orderId, State.Paid)
     {
         Order storage order = orders[_orderId];
@@ -150,7 +151,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash,
         string _cancelReason
     )
-        external onlyProcessor
+        external onlyProcessor whenNotPaused
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
         require(bytes(_cancelReason).length > 0);
@@ -193,7 +194,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash,
         string _refundReason
     )   
-        external onlyProcessor
+        external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
         require(bytes(_refundReason).length > 0);
@@ -223,7 +224,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _orderId Identifier of the order
      */
     function withdrawRefund(uint _orderId) 
-        external
+        external whenNotPaused
         atState(_orderId, State.Refunding) transition(_orderId, State.Refunded) 
     {
         Order storage order = orders[_orderId];
@@ -247,7 +248,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash
     )
-        external onlyProcessor
+        external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
