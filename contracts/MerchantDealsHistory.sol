@@ -13,8 +13,8 @@ contract MerchantDealsHistory is Contactable, Restricted {
 
     string constant VERSION = "0.2";
 
-    ///  Merchant identifier
-    string public merchantId;
+    ///  Merchant identifier hash
+    bytes32 public merchantIdHash;
     
     //Deal event
     event DealCompleted(
@@ -54,14 +54,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         Restricted(_orderProcessor)
     {
         require(bytes(_merchantId).length > 0);
-        merchantId = _merchantId;
-    }
-
-    /**
-    *  @return merchantId hash
-    */
-    function merchantIdHash() external constant returns (bytes32) {
-        return keccak256(merchantId);
+        merchantIdHash = keccak256(_merchantId);
     }
 
     /**
