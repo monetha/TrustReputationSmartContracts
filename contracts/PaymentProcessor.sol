@@ -154,7 +154,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
-        require(_merchantWallet.merchantIdHash == merchantIdHash);
+        require(_merchantWallet.merchantIdHash() == merchantIdHash);
         require(bytes(_cancelReason).length > 0);
 
         Order storage order = orders[_orderId];
@@ -199,7 +199,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
-        require(_merchantWallet.merchantIdHash == merchantIdHash);
+        require(_merchantWallet.merchantIdHash() == merchantIdHash);
         require(bytes(_refundReason).length > 0);
 
         Order storage order = orders[_orderId];
@@ -255,7 +255,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyProcessor whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
-        require(_merchantWallet.merchantIdHash == merchantIdHash);
+        require(_merchantWallet.merchantIdHash() == merchantIdHash);
 
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);
 
@@ -284,7 +284,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _merchantHistory Address of new MerchantDealsHistory contract
      */
     function setMerchantDealsHistory(MerchantDealsHistory _merchantHistory) public onlyOwner {
-        require(_merchantHistory.merchantIdHash == merchantIdHash);
+        require(_merchantHistory.merchantIdHash() == merchantIdHash);
         require(address(_merchantHistory) != 0x0);
 
         merchantHistory = _merchantHistory;
