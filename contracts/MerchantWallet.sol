@@ -20,8 +20,8 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /// Address of merchant's account, that can withdraw from wallet
     address public merchantAccount;
     
-    /// Unique Merchant identifier
-    string public merchantId;
+    /// Unique Merchant identifier hash
+    bytes32 public merchantIdHash;
 
     /// profileMap stores general information about the merchant
     mapping (string=>string) profileMap;
@@ -52,20 +52,13 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
         require(bytes(_merchantId).length > 0);
         
         merchantAccount = _merchantAccount;
-        merchantId = _merchantId;
+        merchantIdHash = keccak256(_merchantId);
     }
 
     /**
      *  Accept payment from MonethaGateway
      */
     function () external payable {
-    }
-
-    /**
-    *  @return merchantId hash
-    */
-    function merchantIdHash() external constant returns (bytes32) {
-        return keccak256(merchantId);
     }
 
     /**
