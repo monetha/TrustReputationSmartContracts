@@ -51,6 +51,7 @@ contract('PaymentProcessor', function (accounts) {
         newProcessor.should.equal(PROCESSOR)
     })
 
+
     it('should add order correctly', async () => {
         const CREATION_TIME = Math.floor(Date.now())
         await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
@@ -220,6 +221,14 @@ contract('PaymentProcessor', function (accounts) {
             "refundig from tests",
             { from: PROCESSOR }
         ).should.be.rejected
+    })
+
+    it('should not add order when contract is paused', async () => {
+        const CREATION_TIME = Math.floor(Date.now())
+        const ORDER_ID = randomReputation()
+        await processor.pause({from:OWNER})
+
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR }).should.be.rejected
     })
 
     async function checkState(processor, orderID, expected) {

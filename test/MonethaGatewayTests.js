@@ -37,4 +37,16 @@ contract('MonethaGateway', function (accounts) {
         deltaMerchant.should.bignumber.equal(value.mul(new BigNumber(1).minus(feeCoeff)))
         deltaVault.should.bignumber.equal(value.mul(feeCoeff))
     })
+
+    it('should not accept payment when contract is paused', async () => {
+        const value = new BigNumber('1e9')
+        const feeCoeff = new BigNumber(await gateway.FEE_PERMILLE()).div(1000)
+
+        const merchantBalance1 = new BigNumber(web3.eth.getBalance(MERCHANT))
+        const vaultBalance1 = new BigNumber(web3.eth.getBalance(VAULT))
+
+        await gateway.pause({from:OWNER})
+
+        await gateway.acceptPayment(MERCHANT, { value: value, from: PROCESSOR }).should.be.rejected
+    })
 });
