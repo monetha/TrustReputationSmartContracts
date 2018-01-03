@@ -62,6 +62,12 @@ contract('PaymentProcessor', function (accounts) {
         order[4].should.equal(ORIGIN)
     })
 
+    it('should not allow to cancel order with different merchant id', async () => {
+        return setupNewWithOrder("diff_merchantId")
+        .then(a => a.cancelOrder(ORDER_ID, MerchantWallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR }))
+        .should.be.rejected
+    })
+
     it('should cancel order correctly', async () => {
         processor = await setupNewWithOrder()
 
@@ -174,11 +180,46 @@ contract('PaymentProcessor', function (accounts) {
         await checkState(processor, ORDER_ID, State.Finalized)
     })
 
+    it('should not process payment for different merchant id', async () => {
+        const clientReputation = randomReputation()
+        const merchantReputation = randomReputation()
+
+        processor = await setupNewWithOrder("diff_MerchantId")
+        await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
+        
+        await processor.processPayment(
+            ORDER_ID,
+            MerchantWallet.address,
+            clientReputation,
+            merchantReputation,
+            0x1234,
+            { from: PROCESSOR }
+        ).should.be.rejected
+    })
+
     it('should set Monetha gateway correctly', async () => {
         await processor.setMonethaGateway(GATEWAY_2, { from: OWNER })
 
         const gateway = await processor.monethaGateway()
         gateway.should.equal(GATEWAY_2)
+    })
+
+    it('should not allow to refund payment for different merchant Id', async () => {
+        const clientReputation = randomReputation()
+        const merchantReputation = randomReputation()
+
+        processor = await setupNewWithOrder("diff_merchantId")
+        await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
+
+        await processor.refundPayment(
+            ORDER_ID,
+            MerchantWallet.address,
+            clientReputation,
+            merchantReputation,
+            0x1234,
+            "refundig from tests",
+            { from: PROCESSOR }
+        ).should.be.rejected
     })
 
     async function checkState(processor, orderID, expected) {
@@ -198,10 +239,11 @@ contract('PaymentProcessor', function (accounts) {
         merchRep.should.bignumber.equal(expectedMerchantReputation)
     }
 
-    async function setupNewWithOrder() {
+    async function setupNewWithOrder(merchantId) {
+        merchantId = merchantId || "merchantId";
         const CREATION_TIME = Math.floor(Date.now())
         const res = await PaymentProcessor.new(
-            "merchantId",
+            merchantId,
             MerchantDealsHistory.address,
             MonethaGateway.address,
             PROCESSOR
