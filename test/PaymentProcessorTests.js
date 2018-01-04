@@ -187,18 +187,17 @@ contract('PaymentProcessor', function (accounts) {
         const clientReputation = randomReputation()
         const merchantReputation = randomReputation()
 
-        processor = await setupNewWithOrder("diff_MerchantId")
-        
-        await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
-        
-        await processor.processPayment(
+        return setupNewWithOrder("diff_MerchantId")
+        .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
+        .then(a => a.processPayment(
             ORDER_ID,
             MerchantWallet.address,
             clientReputation,
             merchantReputation,
             0x1234,
             { from: PROCESSOR }
-        ).should.be.rejected
+        ))
+        .should.be.rejected
     })
 
     it('should set Monetha gateway correctly', async () => {
@@ -212,10 +211,9 @@ contract('PaymentProcessor', function (accounts) {
         const clientReputation = randomReputation()
         const merchantReputation = randomReputation()
 
-        processor = await setupNewWithOrder("diff_merchantId")
-        await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
-
-        await processor.refundPayment(
+        return setupNewWithOrder("diff_merchantId")
+        .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
+        .then(a => a.refundPayment(
             ORDER_ID,
             MerchantWallet.address,
             clientReputation,
@@ -223,7 +221,7 @@ contract('PaymentProcessor', function (accounts) {
             0x1234,
             "refundig from tests",
             { from: PROCESSOR }
-        ).should.be.rejected
+        )).should.be.rejected
     })
 
     it('should set Merchant Deals History correctly', async () => {
