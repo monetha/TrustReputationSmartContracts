@@ -37,7 +37,6 @@ contract('PaymentProcessor', function (accounts) {
     let processor
 
     before(async () => {
-      //  history = await MerchantDealsHistory.new("merchantId", PROCESSOR_2)
         processor = await PaymentProcessor.new(
             "merchantId",
             MerchantWallet.address,
