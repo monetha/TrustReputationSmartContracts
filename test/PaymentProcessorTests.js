@@ -30,15 +30,17 @@ contract('PaymentProcessor', function (accounts) {
     const UNKNOWN = accounts[5]
     const ORIGIN = accounts[6]
     const ACCEPTOR = accounts[7]
+    const HISTORY_ADDRESS  = "0x8bfd2565f9eda18ec80eac54bf39c2e65e4035d6" //accounts[8]
     const PRICE = 1000
     const ORDER_ID = 123
 
     let processor
 
     before(async () => {
+      //  history = await MerchantDealsHistory.new("merchantId", PROCESSOR_2)
         processor = await PaymentProcessor.new(
             "merchantId",
-            "0x0",
+            MerchantWallet.address,
             MonethaGateway.address,
             PROCESSOR_2
         )
@@ -186,6 +188,7 @@ contract('PaymentProcessor', function (accounts) {
         const merchantReputation = randomReputation()
 
         processor = await setupNewWithOrder("diff_MerchantId")
+        
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
         
         await processor.processPayment(
@@ -221,6 +224,16 @@ contract('PaymentProcessor', function (accounts) {
             "refundig from tests",
             { from: PROCESSOR }
         ).should.be.rejected
+    })
+
+    it('should set Merchant Deals History correctly', async () => {
+        history = await MerchantDealsHistory.new("merchantId", PROCESSOR)
+        processor = await setupNewWithOrder()
+
+        await processor.setMerchantDealsHistory(history.address, { from: OWNER })
+        
+        const historyAddress = await processor.merchantHistory()
+        historyAddress.should.equal(history.address)
     })
 
     it('should not add order when contract is paused', async () => {
