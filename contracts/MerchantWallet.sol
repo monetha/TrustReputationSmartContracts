@@ -109,7 +109,7 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  Set composite reputation value by string key
      */
-    function setCompositeReputation(string key, uint32 value) external onlyProcessor {
+    function setCompositeReputation(string key, uint32 value) external onlyMonetha {
         compositeReputationMap[key] = value;
     }
 

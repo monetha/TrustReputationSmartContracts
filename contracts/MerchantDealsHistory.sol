@@ -73,7 +73,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 _merchantReputation,
         bool _isSuccess,
         uint _dealHash)
-        external onlyProcessor
+        external onlyMonetha
     {
         DealCompleted(
             _orderId,
@@ -101,7 +101,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash,
         string _cancelReason)
-        external onlyProcessor
+        external onlyMonetha
     {
         DealCancelationReason(
             _orderId,
@@ -129,7 +129,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash,
         string _refundReason)
-        external onlyProcessor
+        external onlyMonetha
     {
         DealRefundReason(
             _orderId,

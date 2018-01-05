@@ -4,39 +4,31 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 /** @title Restricted
- *  Exposes onlyProcessor modifier
+ *  Exposes onlyMonetha modifier
  */
 contract Restricted is Ownable {
 
-    address public processor;
+    address public monethaAddress;
 
 
-    function Restricted(address _processor) public {
-        require(_processor != 0x0);
-        processor = _processor;
+    function Restricted(address _monethaAddress) public {
+        monethaAddress = _monethaAddress;
     }
 
     /**
-     *  Restrict methods in such way, that they can be invoked only by processor account.
-     *  Restricted methods can be called indirectly, through internal transactions
-     *  Processor account must be an originator of an initial transaction
-     *  
-     *  ***IMPORTANT***
-     *  Usage of tx.origin can lead to critical security vulnerability
-     *  In order to prevent this, processor should *not* interact with unknown contracts
-     *  All calls, that processor can do, should not contain internal transactions to unknown addresses
+     *  Restrict methods in such way, that they can be invoked only by monethaAddress account.
      */
-    modifier onlyProcessor() {
-        require(tx.origin == processor);
+    modifier onlyMonetha() {
+        require(msg.sender == monethaAddress);
         _;
     }
 
     /**
-     *  Allows owner to set new processor account address
+     *  Allows owner to set new monethaAddress account address
      */
-    function setProcessor(address _newProcessor) onlyOwner public {
-        require(_newProcessor != 0x0);
-        processor = _newProcessor;
+    function setMonethaAddress(address _newMonethaAddress) onlyOwner public {
+        require(_newMonethaAddress != 0x0);
+        monethaAddress = _newMonethaAddress;
     }
 
 }

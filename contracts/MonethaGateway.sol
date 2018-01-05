@@ -47,7 +47,7 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
      *      and collects Monetha fee.
      *  @param _merchantWallet address of merchant's wallet for fund transfer
      */
-    function acceptPayment(address _merchantWallet) external payable onlyProcessor {
+    function acceptPayment(address _merchantWallet) external payable onlyMonetha {
         require(_merchantWallet != 0x0);
 
         uint merchantIncome = msg.value.sub(FEE_PERMILLE.mul(msg.value).div(1000));
