@@ -48,11 +48,8 @@ contract MerchantDealsHistory is Contactable, Restricted {
 
     /**
      *  @param _merchantId Merchant of the acceptor
-     *  @param _orderProcessor Address of Order Processor account, which operates contract
      */
-    function MerchantDealsHistory(string _merchantId, address _orderProcessor) public
-        Restricted(_orderProcessor)
-    {
+    function MerchantDealsHistory(string _merchantId) public {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
     }

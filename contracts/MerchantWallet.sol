@@ -43,11 +43,8 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  @param _merchantAccount Address of merchant's account, that can withdraw from wallet
      *  @param _merchantId Merchant identifier
-     *  @param _processor Address of Processor account, which operates compositeReputationMap
      */
-    function MerchantWallet(address _merchantAccount, string _merchantId, address _processor)
-        public Restricted(_processor)
-    {
+    function MerchantWallet(address _merchantAccount, string _merchantId) public {
         require(_merchantAccount != 0x0);
         require(bytes(_merchantId).length > 0);
         

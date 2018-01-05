@@ -33,11 +33,8 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
 
     /**
      *  @param _monethaVault Address of Monetha Vault
-     *  @param _orderProcessor Address of Order Processor account, which operates contract
      */
-    function MonethaGateway(address _monethaVault, address _orderProcessor) public 
-        Restricted(_orderProcessor)
-    {
+    function MonethaGateway(address _monethaVault) public {
         require(_monethaVault != 0x0);
         monethaVault = _monethaVault;
     }

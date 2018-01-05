@@ -75,14 +75,12 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _merchantId Merchant of the acceptor
      *  @param _merchantHistory Address of MerchantDealsHistory contract of acceptor's merchant
      *  @param _monethaGateway Address of MonethaGateway contract for payment processing
-     *  @param _processingAccount Address of Order Processor account, which operates contract
      */
     function PaymentProcessor(
         string _merchantId,
         MerchantDealsHistory _merchantHistory,
-        MonethaGateway _monethaGateway,
-        address _processingAccount
-    ) Restricted(_processingAccount)
+        MonethaGateway _monethaGateway
+    ) public
     {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
