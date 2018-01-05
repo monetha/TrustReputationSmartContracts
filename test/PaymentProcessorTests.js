@@ -1,4 +1,3 @@
-const utils = require('./utils.js')
 const BigNumber = require('bignumber.js')
 const chai = require('chai')
 chai.use(require('chai-bignumber')())
@@ -26,7 +25,6 @@ contract('PaymentProcessor', function (accounts) {
     const OWNER = accounts[0]
     const PROCESSOR = accounts[1]
     const CLIENT = accounts[2]
-    const PROCESSOR_2 = accounts[3]
     const GATEWAY_2 = accounts[4]
     const UNKNOWN = accounts[5]
     const ORIGIN = accounts[6]
@@ -39,27 +37,26 @@ contract('PaymentProcessor', function (accounts) {
     let processor, gateway, wallet, history
 
     before(async () => {
-        gateway = await MonethaGateway.new(VAULT, "0x0")
-        wallet = await MerchantWallet.new(MERCHANT, "merchantId", "0x0")
-        history = await MerchantHistory.new("merchantId", "0x0")
+        gateway = await MonethaGateway.new(VAULT)
+        wallet = await MerchantWallet.new(MERCHANT, "merchantId")
+        history = await MerchantHistory.new("merchantId")
 
         processor = await PaymentProcessor.new(
             "merchantId",
             history.address,
-            gateway.address,
-            PROCESSOR_2
+            gateway.address
         )
 
-        await gateway.setMonethaAddress(processor.address)
-        await wallet.setMonethaAddress(processor.address)
-        await history.setMonethaAddress(processor.address)
+        await gateway.setMonethaAddress(processor.address, true)
+        await wallet.setMonethaAddress(processor.address, true)
+        await history.setMonethaAddress(processor.address, true)
     })
 
     it('should set Monetha address correctly', async () => {
-        await processor.setMonethaAddress(PROCESSOR, { from: OWNER })
+        await processor.setMonethaAddress(PROCESSOR, true, { from: OWNER })
 
-        const newProcessor = await processor.monethaAddress()
-        newProcessor.should.equal(PROCESSOR)
+        const res = await processor.isMonethaAddress(PROCESSOR)
+        res.should.be.true
     })
 
     it('should add order correctly', async () => {
@@ -203,20 +200,20 @@ contract('PaymentProcessor', function (accounts) {
 
 
     async function setupNewWithOrder() {
-        let gateway = await MonethaGateway.new(VAULT, "0x0")
-        let wallet = await MerchantWallet.new(MERCHANT, "merchantId", "0x0")
-        let history = await MerchantHistory.new("merchantId", "0x0")
+        let gateway = await MonethaGateway.new(VAULT)
+        let wallet = await MerchantWallet.new(MERCHANT, "merchantId")
+        let history = await MerchantHistory.new("merchantId")
 
         let processor = await PaymentProcessor.new(
             "merchantId",
             history.address,
-            gateway.address,
-            PROCESSOR
+            gateway.address
         )
 
-        await gateway.setMonethaAddress(processor.address)
-        await wallet.setMonethaAddress(processor.address)
-        await history.setMonethaAddress(processor.address)
+        await processor.setMonethaAddress(PROCESSOR, true)
+        await gateway.setMonethaAddress(processor.address, true)
+        await wallet.setMonethaAddress(processor.address, true)
+        await history.setMonethaAddress(processor.address, true)
 
         const CREATION_TIME = Math.floor(Date.now())
         await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })

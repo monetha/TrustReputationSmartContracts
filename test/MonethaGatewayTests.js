@@ -16,7 +16,8 @@ contract('MonethaGateway', function (accounts) {
     let gateway
 
     before(async () => {
-        gateway = await MonethaGateway.new(VAULT, PAYMENT_PROCESSOR_CONTRACT)
+        gateway = await MonethaGateway.new(VAULT)
+        await gateway.setMonethaAddress(PAYMENT_PROCESSOR_CONTRACT, true)
     });
 
     it('should accept payment correctly', async () => {

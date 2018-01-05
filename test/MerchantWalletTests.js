@@ -17,7 +17,8 @@ contract('MerchantWallet', function (accounts) {
     let wallet
 
     before(async () => {
-        wallet = await Wallet.new(MERCHANT, "merchantId", PAYMENT_PROCESSOR_CONTRACT)
+        wallet = await Wallet.new(MERCHANT, "merchantId")
+        await wallet.setMonethaAddress(PAYMENT_PROCESSOR_CONTRACT, true)
     });
 
     it('should set profile correctly', async () => {
