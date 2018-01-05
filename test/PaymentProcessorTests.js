@@ -25,6 +25,7 @@ contract('PaymentProcessor', function (accounts) {
     const OWNER = accounts[0]
     const PROCESSOR = accounts[1]
     const CLIENT = accounts[2]
+    const PROCESSING_ADDRESS = accounts[3]
     const GATEWAY_2 = accounts[4]
     const UNKNOWN = accounts[5]
     const ORIGIN = accounts[6]
@@ -37,7 +38,7 @@ contract('PaymentProcessor', function (accounts) {
     let processor, gateway, wallet, history
 
     before(async () => {
-        gateway = await MonethaGateway.new(VAULT)
+        gateway = await MonethaGateway.new(VAULT, PROCESSING_ADDRESS)
         wallet = await MerchantWallet.new(MERCHANT, "merchantId")
         history = await MerchantHistory.new("merchantId")
 
@@ -47,7 +48,7 @@ contract('PaymentProcessor', function (accounts) {
             gateway.address
         )
 
-        await gateway.setMonethaAddress(processor.address, true)
+        await gateway.setMonethaAddress(processor.address, true, {from: PROCESSING_ADDRESS})
         await wallet.setMonethaAddress(processor.address, true)
         await history.setMonethaAddress(processor.address, true)
     })
@@ -200,7 +201,7 @@ contract('PaymentProcessor', function (accounts) {
 
 
     async function setupNewWithOrder() {
-        let gateway = await MonethaGateway.new(VAULT)
+        let gateway = await MonethaGateway.new(VAULT, PROCESSING_ADDRESS)
         let wallet = await MerchantWallet.new(MERCHANT, "merchantId")
         let history = await MerchantHistory.new("merchantId")
 
@@ -211,7 +212,7 @@ contract('PaymentProcessor', function (accounts) {
         )
 
         await processor.setMonethaAddress(PROCESSOR, true)
-        await gateway.setMonethaAddress(processor.address, true)
+        await gateway.setMonethaAddress(processor.address, true, {from: PROCESSING_ADDRESS})
         await wallet.setMonethaAddress(processor.address, true)
         await history.setMonethaAddress(processor.address, true)
 
