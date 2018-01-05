@@ -12,12 +12,12 @@ contract('MerchantWallet', function (accounts) {
     const MERCHANT = accounts[1]
     const MERCHANT2 = accounts[2]
     const UNKNOWN = accounts[3]
-    const PROCESSOR = accounts[4]
+    const PAYMENT_PROCESSOR_CONTRACT = accounts[4]
 
     let wallet
 
     before(async () => {
-        wallet = await Wallet.new(MERCHANT, "merchantId", PROCESSOR)
+        wallet = await Wallet.new(MERCHANT, "merchantId", PAYMENT_PROCESSOR_CONTRACT)
     });
 
     it('should set profile correctly', async () => {
@@ -44,7 +44,7 @@ contract('MerchantWallet', function (accounts) {
     })
 
     it('should set compositeReputation correctly', async () => {
-        await wallet.setCompositeReputation("Delivery", 5, { from: PROCESSOR })
+        await wallet.setCompositeReputation("Delivery", 5, { from: PAYMENT_PROCESSOR_CONTRACT })
         const res = new BigNumber(await wallet.compositeReputation("Delivery"))
 
         res.should.bignumber.equal(5)
