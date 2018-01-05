@@ -65,8 +65,11 @@ contract('PaymentProcessor', function (accounts) {
     })
 
     it('should not allow to cancel order with different merchant id', async () => {
-        return setupNewWithOrder("diff_merchantId")
-        .then(a => a.cancelOrder(ORDER_ID, MerchantWallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR }))
+
+        history1 = await MerchantDealsHistory.new("diff-merchantId", PROCESSOR)
+        processor1 = await setupNewWithOrder("diff-merchantId", history1.address)
+
+        await processor1.cancelOrder(ORDER_ID, MerchantWallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
         .should.be.rejected
     })
 
@@ -186,17 +189,19 @@ contract('PaymentProcessor', function (accounts) {
         const clientReputation = randomReputation()
         const merchantReputation = randomReputation()
 
-        return setupNewWithOrder("diff_MerchantId")
-        .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
-        .then(a => a.processPayment(
+        history1 = await MerchantDealsHistory.new("diff-merchantId", PROCESSOR)
+        processor1 = await setupNewWithOrder("diff-merchantId", history1.address)
+
+        await processor1.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
+
+        await processor1.processPayment(
             ORDER_ID,
             MerchantWallet.address,
             clientReputation,
             merchantReputation,
             0x1234,
             { from: PROCESSOR }
-        ))
-        .should.be.rejected
+        ).should.be.rejected
     })
 
     it('should set Monetha gateway correctly', async () => {
@@ -210,9 +215,12 @@ contract('PaymentProcessor', function (accounts) {
         const clientReputation = randomReputation()
         const merchantReputation = randomReputation()
 
-        return setupNewWithOrder("diff_merchantId")
-        .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
-        .then(a => a.refundPayment(
+        history1 = await MerchantDealsHistory.new("diff-merchantId", PROCESSOR)
+        processor1 = await setupNewWithOrder("diff-merchantId", history1.address)
+
+        await processor1.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
+
+        const result = await processor1.refundPayment(
             ORDER_ID,
             MerchantWallet.address,
             clientReputation,
@@ -220,7 +228,7 @@ contract('PaymentProcessor', function (accounts) {
             0x1234,
             "refundig from tests",
             { from: PROCESSOR }
-        )).should.be.rejected
+        ).should.be.rejected
     })
 
     it('should set Merchant Deals History correctly', async () => {
@@ -231,6 +239,15 @@ contract('PaymentProcessor', function (accounts) {
         
         const historyAddress = await processor.merchantHistory()
         historyAddress.should.equal(history.address)
+    })
+
+    it('should not set Merchant Deals History for different merchant id', async () => {
+        history1 = await MerchantDealsHistory.new("merchant1", PROCESSOR)
+        history2 = await MerchantDealsHistory.new("merchant2", PROCESSOR)
+
+        processor1 = await setupNewWithOrder("merchant1", history1.address)
+
+        await processor1.setMerchantDealsHistory(history2.address, { from: OWNER }).should.be.rejected
     })
 
     it('should not add order when contract is paused', async () => {
@@ -258,12 +275,13 @@ contract('PaymentProcessor', function (accounts) {
         merchRep.should.bignumber.equal(expectedMerchantReputation)
     }
 
-    async function setupNewWithOrder(merchantId) {
-        merchantId = merchantId || "merchantId";
+    async function setupNewWithOrder(_merchantId, _address) {
+        merchantId = _merchantId || "merchantId";
+        address = _address || MerchantDealsHistory.address;
         const CREATION_TIME = Math.floor(Date.now())
         const res = await PaymentProcessor.new(
             merchantId,
-            MerchantDealsHistory.address,
+            address,
             MonethaGateway.address,
             PROCESSOR
         )
