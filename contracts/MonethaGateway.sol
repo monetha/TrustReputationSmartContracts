@@ -15,7 +15,7 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
 
     using SafeMath for uint256;
     
-    string constant VERSION = "0.2";
+    string constant VERSION = "0.3";
 
     /**
      *  Fee permille of Monetha fee.
@@ -34,9 +34,12 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
     /**
      *  @param _monethaVault Address of Monetha Vault
      */
-    function MonethaGateway(address _monethaVault) public {
+    function MonethaGateway(address _monethaVault, address _processingAccount) public {
         require(_monethaVault != 0x0);
         monethaVault = _monethaVault;
+        
+        require(_processingAccount != 0);
+        isMonethaAddress[_processingAccount] = true;
     }
     
     /**
@@ -62,5 +65,12 @@ contract MonethaGateway is Contactable, Destructible, Restricted {
      */
     function changeMonethaVault(address newVault) external onlyOwner {
         monethaVault = newVault;
+    }
+
+    /**
+     *  Allows other monetha account or contract to set new monetha address
+     */
+    function setMonethaAddress(address _address, bool _isMonethaAddress) onlyMonetha public {
+        isMonethaAddress[_address] = _isMonethaAddress;
     }
 }

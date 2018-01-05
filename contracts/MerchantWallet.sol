@@ -15,7 +15,7 @@ import "./SafeDestructible.sol";
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     
-    string constant VERSION = "0.2";
+    string constant VERSION = "0.3";
 
     /// Address of merchant's account, that can withdraw from wallet
     address public merchantAccount;

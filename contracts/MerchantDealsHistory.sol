@@ -11,7 +11,7 @@ import './Restricted.sol';
  */
 contract MerchantDealsHistory is Contactable, Restricted {
 
-    string constant VERSION = "0.2";
+    string constant VERSION = "0.3";
 
     ///  Merchant identifier
     string public merchantId;

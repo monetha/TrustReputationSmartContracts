@@ -19,7 +19,7 @@ contract Restricted is Ownable {
     }
 
     /**
-     *  Allows owner to set new monethaAddress account address
+     *  Allows owner to set new monetha address
      */
     function setMonethaAddress(address _address, bool _isMonethaAddress) onlyOwner public {
         isMonethaAddress[_address] = _isMonethaAddress;
