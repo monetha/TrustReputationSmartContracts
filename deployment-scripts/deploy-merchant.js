@@ -26,13 +26,13 @@ module.exports = function (callback) {
       console.log("PaymentProcessor deployed at " + paymentProcessor.address)
 
       const gateway = MonethaGateway.at(config.monethaGatewayAddress)
-      await paymentProcessor.setMonethaAddress(config.processorAddress, true)
+      await paymentProcessor.setMonethaAddress(config.processingAddress, true)
       await paymentProcessor.transferOwnership(config.ownerAddress)
       await wallet.setMonethaAddress(paymentProcessor.address, true)
       await wallet.transferOwnership(config.ownerAddress)
       await history.setMonethaAddress(paymentProcessor.address, true)
       await history.transferOwnership(config.ownerAddress)
-      await gateway.setMonethaAddress(paymentProcessor.address, true)
+      await gateway.setMonethaAddress(paymentProcessor.address, true, {from: config.processingAddress})
       console.log("Monetha addresses configured")
 
       console.log("Merchant deployment finished.")

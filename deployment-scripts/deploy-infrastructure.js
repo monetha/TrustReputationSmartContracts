@@ -5,8 +5,8 @@ const config = require("./config.json")
 module.exports = function (callback) {
   new Promise(async () => {
     try {
-      const gateway = await MonethaGateway.new(config.vaultAddress)
-      //await gateway.transferOwnership(config.ownerAddress)  // we need to call setMonethaAddress in deploy-merchant.js
+      const gateway = await MonethaGateway.new(config.vaultAddress, config.processingAddress)
+      await gateway.transferOwnership(config.ownerAddress)
       console.log("MonethaGateway deployed at " + gateway.address)
 
       console.log("Infrastructure deployment finished.")
