@@ -13,6 +13,11 @@ live: {
 }
 ```
 
+Also you need to compile your contracts before deployment:
+```
+truffle compile
+```
+
 1. **Infrastructure contract: MonethaGateway**
 
     You need to specify deployment parameters for contracts inside `config.json`.
