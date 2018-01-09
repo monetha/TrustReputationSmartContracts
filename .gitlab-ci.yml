@@ -16,6 +16,7 @@ build_and_test_contracts:
     - ./node_modules/.bin/truffle compile
     - ./node_modules/.bin/testrpc &> /dev/null & ./node_modules/.bin/truffle test
     - for file in build/contracts/*.json; do jq '.abi' < "$file" > "${file%.json}.abi"; done
+    - for file in build/contracts/*.json; do jq -r '.bytecode' < "$file" > "${file%.json}.bin"; done
   artifacts:
     paths:
       - build/
