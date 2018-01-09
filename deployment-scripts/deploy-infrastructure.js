@@ -5,7 +5,7 @@ const config = require("./config.json")
 module.exports = function (callback) {
   new Promise(async () => {
     try {
-      const gateway = await MonethaGateway.new(config.vaultAddress, config.processorAddress)
+      const gateway = await MonethaGateway.new(config.vaultAddress, config.processingAddress)
       await gateway.transferOwnership(config.ownerAddress)
       console.log("MonethaGateway deployed at " + gateway.address)
 

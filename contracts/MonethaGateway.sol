@@ -16,7 +16,7 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
 
     using SafeMath for uint256;
     
-    string constant VERSION = "0.2";
+    string constant VERSION = "0.3";
 
     /**
      *  Fee permille of Monetha fee.
@@ -34,13 +34,13 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
 
     /**
      *  @param _monethaVault Address of Monetha Vault
-     *  @param _orderProcessor Address of Order Processor account, which operates contract
      */
-    function MonethaGateway(address _monethaVault, address _orderProcessor) public 
-        Restricted(_orderProcessor)
-    {
+    function MonethaGateway(address _monethaVault, address _processingAccount) public {
         require(_monethaVault != 0x0);
         monethaVault = _monethaVault;
+        
+        require(_processingAccount != 0);
+        isMonethaAddress[_processingAccount] = true;
     }
     
     /**
@@ -48,7 +48,7 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
      *      and collects Monetha fee.
      *  @param _merchantWallet address of merchant's wallet for fund transfer
      */
-    function acceptPayment(address _merchantWallet) external payable onlyProcessor whenNotPaused {
+    function acceptPayment(address _merchantWallet) external payable onlyMonetha whenNotPaused {
         require(_merchantWallet != 0x0);
 
         uint merchantIncome = msg.value.sub(FEE_PERMILLE.mul(msg.value).div(1000));
@@ -66,5 +66,12 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
      */
     function changeMonethaVault(address newVault) external onlyOwner whenNotPaused {
         monethaVault = newVault;
+    }
+
+    /**
+     *  Allows other monetha account or contract to set new monetha address
+     */
+    function setMonethaAddress(address _address, bool _isMonethaAddress) onlyMonetha public {
+        isMonethaAddress[_address] = _isMonethaAddress;
     }
 }
