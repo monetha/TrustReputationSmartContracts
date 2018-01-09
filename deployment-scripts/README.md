@@ -13,11 +13,6 @@ live: {
 }
 ```
 
-Also you need to compile your contracts before deployment:
-```
-truffle compile
-```
-
 1. **Infrastructure contract: MonethaGateway**
 
     You need to specify deployment parameters for contracts inside `config.json`.
@@ -25,7 +20,7 @@ truffle compile
     For example:
     ```
     {
-        "processingAddress": "0xb78d7a1a082e19f36353721dc133d5c6f09ccea8",
+        "processorAddress": "0xb78d7a1a082e19f36353721dc133d5c6f09ccea8",
         "ownerAddress": "0x3d246f591dc69f1747e56e4558601c38146f6662",
         "vaultAddress": "0x00861d9C49d274A6863B45850e0F01C4874DF341",
         "monethaGatewayAddress": "0xE808419C664160017D2D5eebc74e14fBDaaaD1F5"

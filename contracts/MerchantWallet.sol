@@ -15,7 +15,7 @@ import "./SafeDestructible.sol";
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     
-    string constant VERSION = "0.3";
+    string constant VERSION = "0.2";
 
     /// Address of merchant's account, that can withdraw from wallet
     address public merchantAccount;
@@ -43,8 +43,11 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  @param _merchantAccount Address of merchant's account, that can withdraw from wallet
      *  @param _merchantId Merchant identifier
+     *  @param _processor Address of Processor account, which operates compositeReputationMap
      */
-    function MerchantWallet(address _merchantAccount, string _merchantId) public {
+    function MerchantWallet(address _merchantAccount, string _merchantId, address _processor)
+        public Restricted(_processor)
+    {
         require(_merchantAccount != 0x0);
         require(bytes(_merchantId).length > 0);
         
@@ -106,7 +109,7 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  Set composite reputation value by string key
      */
-    function setCompositeReputation(string key, uint32 value) external onlyMonetha {
+    function setCompositeReputation(string key, uint32 value) external onlyProcessor {
         compositeReputationMap[key] = value;
     }
 
