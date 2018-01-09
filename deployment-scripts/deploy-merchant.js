@@ -6,8 +6,8 @@ const PaymentProcessor = artifacts.require("PaymentProcessor");
 const MonethaGateway = artifacts.require("MonethaGateway");
 
 const config = require("./config.json")
-assert(process.argv.length == 5, "Please specify the path to merchant config json file")
-const merchantConfig = require(process.argv[4])
+assert(process.argv.length == 6, "Please specify the path to merchant config json file")
+const merchantConfig = require(process.argv[5])
 
 module.exports = function (callback) {
   new Promise(async () => {
