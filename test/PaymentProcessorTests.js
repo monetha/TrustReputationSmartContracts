@@ -44,7 +44,8 @@ contract('PaymentProcessor', function (accounts) {
         processor = await PaymentProcessor.new(
             "merchantId",
             history.address,
-            gateway.address
+            gateway.address,
+            wallet.address
         )
 
         await gateway.setMonethaAddress(processor.address, true, { from: PROCESSING_ADDRESS })
@@ -96,7 +97,6 @@ contract('PaymentProcessor', function (accounts) {
 
         const result = await processor.refundPayment(
             ORDER_ID,
-            wallet.address,
             clientReputation,
             merchantReputation,
             0x1234,
@@ -139,7 +139,7 @@ contract('PaymentProcessor', function (accounts) {
     it('should cancel order correctly', async () => {
         const contracts = await setupNewWithOrder()
 
-        await contracts.processor.cancelOrder(ORDER_ID, contracts.wallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
+        await contracts.processor.cancelOrder(ORDER_ID, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
 
         const order = await contracts.processor.orders(ORDER_ID)
         await checkState(contracts.processor, ORDER_ID, State.Cancelled)
@@ -163,9 +163,8 @@ contract('PaymentProcessor', function (accounts) {
         const clientReputation = randomReputation()
         const merchantReputation = randomReputation()
 
-        const contracts = await setupNewWithOrder()
-        const processor = contracts.processor
-        const wallet = contracts.wallet
+        const created = await setupNewWithOrder()
+        const processor = created.processor
 
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
 
@@ -173,7 +172,6 @@ contract('PaymentProcessor', function (accounts) {
 
         const result = await processor.processPayment(
             ORDER_ID,
-            wallet.address,
             clientReputation,
             merchantReputation,
             0x1234,
@@ -184,48 +182,11 @@ contract('PaymentProcessor', function (accounts) {
         processorBalance1.minus(processorBalance2).should.bignumber.equal(PRICE)
 
         await checkReputation(
-            wallet,
+            created.wallet,
             clientReputation,
             merchantReputation
         )
         await checkState(processor, ORDER_ID, State.Finalized)
-    })
-
-    it('should not process payment for different merchant id', async () => {
-        const clientReputation = randomReputation()
-        const merchantReputation = randomReputation()
-
-        const created = await setupNewWithOrder("diff-merchantId")
-
-        await created.processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
-
-        await created.processor.processPayment(
-            ORDER_ID,
-            wallet.address,
-            clientReputation,
-            merchantReputation,
-            0x1234,
-            { from: PROCESSOR }
-        ).should.be.rejected
-    })
-
-    it('should not allow to refund payment for different merchant Id', async () => {
-        const clientReputation = randomReputation()
-        const merchantReputation = randomReputation()
-
-        const created = await setupNewWithOrder("diff-merchantId")
-
-        await created.processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
-
-        const result = await created.processor.refundPayment(
-            ORDER_ID,
-            wallet.address,
-            clientReputation,
-            merchantReputation,
-            0x1234,
-            "refunding from tests",
-            { from: PROCESSOR }
-        ).should.be.rejected
     })
 
     it('should set Merchant Deals History correctly', async () => {
@@ -281,7 +242,8 @@ contract('PaymentProcessor', function (accounts) {
         let processor = await PaymentProcessor.new(
             merchantId,
             history.address,
-            gateway.address
+            gateway.address,
+            wallet.address
         )
 
         await processor.setMonethaAddress(PROCESSOR, true)
