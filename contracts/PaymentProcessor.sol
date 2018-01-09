@@ -75,14 +75,12 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
      *  @param _merchantId Merchant of the acceptor
      *  @param _merchantHistory Address of MerchantDealsHistory contract of acceptor's merchant
      *  @param _monethaGateway Address of MonethaGateway contract for payment processing
-     *  @param _processingAccount Address of Order Processor account, which operates contract
      */
     function PaymentProcessor(
         string _merchantId,
         MerchantDealsHistory _merchantHistory,
-        MonethaGateway _monethaGateway,
-        address _processingAccount
-    ) Restricted(_processingAccount)
+        MonethaGateway _monethaGateway
+    ) public
     {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
@@ -105,7 +103,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         address _paymentAcceptor,
         address _originAddress,
         uint _orderCreationTime
-    ) external onlyProcessor atState(_orderId, State.Null)
+    ) external onlyMonetha atState(_orderId, State.Null)
     {
         require(_orderId > 0);
         require(_price > 0);
@@ -150,7 +148,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash,
         string _cancelReason
     )
-        external onlyProcessor
+        external onlyMonetha
         atState(_orderId, State.Created) transition (_orderId, State.Cancelled)
     {
         require(bytes(_cancelReason).length > 0);
@@ -193,7 +191,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint _dealHash,
         string _refundReason
     )   
-        external onlyProcessor
+        external onlyMonetha
         atState(_orderId, State.Paid) transition(_orderId, State.Refunding)
     {
         require(bytes(_refundReason).length > 0);
@@ -247,7 +245,7 @@ contract PaymentProcessor is Destructible, Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash
     )
-        external onlyProcessor
+        external onlyMonetha
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
         monethaGateway.acceptPayment.value(orders[_orderId].price)(_merchantWallet);

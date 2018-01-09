@@ -11,7 +11,7 @@ import './Restricted.sol';
  */
 contract MerchantDealsHistory is Contactable, Restricted {
 
-    string constant VERSION = "0.2";
+    string constant VERSION = "0.3";
 
     ///  Merchant identifier
     string public merchantId;
@@ -48,11 +48,8 @@ contract MerchantDealsHistory is Contactable, Restricted {
 
     /**
      *  @param _merchantId Merchant of the acceptor
-     *  @param _orderProcessor Address of Order Processor account, which operates contract
      */
-    function MerchantDealsHistory(string _merchantId, address _orderProcessor) public
-        Restricted(_orderProcessor)
-    {
+    function MerchantDealsHistory(string _merchantId) public {
         require(bytes(_merchantId).length > 0);
         merchantId = _merchantId;
     }
@@ -73,7 +70,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 _merchantReputation,
         bool _isSuccess,
         uint _dealHash)
-        external onlyProcessor
+        external onlyMonetha
     {
         DealCompleted(
             _orderId,
@@ -101,7 +98,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash,
         string _cancelReason)
-        external onlyProcessor
+        external onlyMonetha
     {
         DealCancelationReason(
             _orderId,
@@ -129,7 +126,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
         uint32 _merchantReputation,
         uint _dealHash,
         string _refundReason)
-        external onlyProcessor
+        external onlyMonetha
     {
         DealRefundReason(
             _orderId,

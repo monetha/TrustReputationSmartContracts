@@ -11,12 +11,14 @@ contract('MonethaGateway', function (accounts) {
     const OWNER = accounts[0]
     const VAULT = accounts[1]
     const MERCHANT = accounts[2]
-    const PROCESSOR = accounts[3]
+    const PAYMENT_PROCESSOR_CONTRACT = accounts[3]
+    const PROCESSING_ADDRESS = accounts[4]
 
     let gateway
 
     before(async () => {
-        gateway = await MonethaGateway.new(VAULT, PROCESSOR)
+        gateway = await MonethaGateway.new(VAULT, PROCESSING_ADDRESS)
+        await gateway.setMonethaAddress(PAYMENT_PROCESSOR_CONTRACT, true, {from: PROCESSING_ADDRESS})
     });
 
     it('should accept payment correctly', async () => {
@@ -26,7 +28,7 @@ contract('MonethaGateway', function (accounts) {
         const merchantBalance1 = new BigNumber(web3.eth.getBalance(MERCHANT))
         const vaultBalance1 = new BigNumber(web3.eth.getBalance(VAULT))
 
-        await gateway.acceptPayment(MERCHANT, { value: value, from: PROCESSOR })
+        await gateway.acceptPayment(MERCHANT, { value: value, from: PAYMENT_PROCESSOR_CONTRACT })
 
         const merchantBalance2 = new BigNumber(web3.eth.getBalance(MERCHANT))
         const vaultBalance2 = new BigNumber(web3.eth.getBalance(VAULT))
