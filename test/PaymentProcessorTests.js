@@ -72,14 +72,6 @@ contract('PaymentProcessor', function (accounts) {
         order[4].should.equal(ORIGIN)
     })
 
-    it('should not allow to cancel order with different merchant id', async () => {
-
-        const created = await setupNewWithOrder("diff-merchantId")
-
-        await created.processor.cancelOrder(ORDER_ID, wallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
-            .should.be.rejected
-    })
-
     it('should accept secure payment correctly', async () => {
         const order = await processor.orders(ORDER_ID)
 
