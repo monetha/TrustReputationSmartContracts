@@ -21,7 +21,8 @@ module.exports = function (callback) {
       const paymentProcessor = await PaymentProcessor.new(
         merchantConfig.merchantId,
         history.address,
-        config.monethaGatewayAddress
+        config.monethaGatewayAddress,
+        wallet.address
       )
       console.log("PaymentProcessor deployed at " + paymentProcessor.address)
 
