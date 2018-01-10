@@ -83,8 +83,11 @@ contract('MerchantWallet', function (accounts) {
         balance2.should.bignumber.equal(balance1.plus(amount))
     })
 
-    it('should not allow to withdraw by other accounts', () => {
-        return wallet.withdrawTo(MERCHANT, { from: UNKNOWN }).should.be.rejected
+    it('should not allow to withdraw by other accounts', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        await wallet.withdrawTo(MERCHANT, amount, { from: UNKNOWN }).should.be.rejected
     })
 
     it('should not allow to withdraw when contract is paused', async () => {
