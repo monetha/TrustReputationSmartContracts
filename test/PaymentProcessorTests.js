@@ -60,7 +60,6 @@ contract('PaymentProcessor', function (accounts) {
         res.should.be.true
     })
 
-
     it('should add order correctly', async () => {
         const CREATION_TIME = Math.floor(Date.now())
         await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
