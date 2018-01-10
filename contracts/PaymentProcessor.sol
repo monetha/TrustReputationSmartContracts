@@ -89,13 +89,13 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
     ) public
     {
         require(bytes(_merchantId).length > 0);
-        require(_merchantHistory.merchantIdHash() == keccak256(_merchantId));
 
         merchantIdHash = keccak256(_merchantId);
         merchantHistory = _merchantHistory;
 
         setMonethaGateway(_monethaGateway);
         setMerchantWallet(_merchantWallet);
+        setMerchantDealsHistory(_merchantHistory);
     }
 
     /**
@@ -277,6 +277,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _newWallet Address of new MerchantWallet contract
      */
     function setMerchantWallet(MerchantWallet _newWallet) public onlyOwner {
+        require(address(_newWallet) != 0x0);
         require(_newWallet.merchantIdHash() == merchantIdHash);
 
         merchantWallet = _newWallet;
@@ -287,8 +288,8 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _merchantHistory Address of new MerchantDealsHistory contract
      */
     function setMerchantDealsHistory(MerchantDealsHistory _merchantHistory) public onlyOwner {
-        require(_merchantHistory.merchantIdHash() == merchantIdHash);
         require(address(_merchantHistory) != 0x0);
+        require(_merchantHistory.merchantIdHash() == merchantIdHash);
 
         merchantHistory = _merchantHistory;
     }
