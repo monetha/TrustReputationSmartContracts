@@ -91,7 +91,6 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         require(bytes(_merchantId).length > 0);
 
         merchantIdHash = keccak256(_merchantId);
-        merchantHistory = _merchantHistory;
 
         setMonethaGateway(_monethaGateway);
         setMerchantWallet(_merchantWallet);
