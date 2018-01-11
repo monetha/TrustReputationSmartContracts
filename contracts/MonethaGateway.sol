@@ -39,7 +39,7 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
         require(_monethaVault != 0x0);
         monethaVault = _monethaVault;
         
-        require(_processingAccount != 0);
+        require(_processingAccount != 0x0);
         isMonethaAddress[_processingAccount] = true;
     }
     
