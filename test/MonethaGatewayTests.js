@@ -12,13 +12,13 @@ contract('MonethaGateway', function (accounts) {
     const VAULT = accounts[1]
     const MERCHANT = accounts[2]
     const PAYMENT_PROCESSOR_CONTRACT = accounts[3]
-    const PROCESSING_ADDRESS = accounts[4]
+    const ADMIN = accounts[4]
 
     let gateway
 
     before(async () => {
-        gateway = await MonethaGateway.new(VAULT, PROCESSING_ADDRESS)
-        await gateway.setMonethaAddress(PAYMENT_PROCESSOR_CONTRACT, true, {from: PROCESSING_ADDRESS})
+        gateway = await MonethaGateway.new(VAULT, ADMIN)
+        await gateway.setMonethaAddress(PAYMENT_PROCESSOR_CONTRACT, true, {from: ADMIN})
     });
 
     it('should accept payment correctly', async () => {

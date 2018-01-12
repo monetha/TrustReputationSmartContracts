@@ -30,17 +30,22 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
      */
     address public monethaVault;
 
+    /**
+     *  Account for permissions managing
+     */
+    address public admin;
+
     event PaymentProcessed(address merchantWallet, uint merchantIncome, uint monethaIncome);
 
     /**
      *  @param _monethaVault Address of Monetha Vault
      */
-    function MonethaGateway(address _monethaVault, address _processingAccount) public {
+    function MonethaGateway(address _monethaVault, address _admin) public {
         require(_monethaVault != 0x0);
         monethaVault = _monethaVault;
         
-        require(_processingAccount != 0x0);
-        isMonethaAddress[_processingAccount] = true;
+        require(_admin != 0x0);
+        admin = _admin;
     }
     
     /**
@@ -71,7 +76,9 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
     /**
      *  Allows other monetha account or contract to set new monetha address
      */
-    function setMonethaAddress(address _address, bool _isMonethaAddress) onlyMonetha public {
+    function setMonethaAddress(address _address, bool _isMonethaAddress) public {
+        require(msg.sender == admin || msg.sender == owner);
+
         isMonethaAddress[_address] = _isMonethaAddress;
     }
 }

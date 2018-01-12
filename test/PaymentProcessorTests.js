@@ -24,7 +24,7 @@ contract('PaymentProcessor', function (accounts) {
     const OWNER = accounts[0]
     const PROCESSOR = accounts[1]
     const CLIENT = accounts[2]
-    const PROCESSING_ADDRESS = accounts[3]
+    const ADMIN = accounts[3]
     const GATEWAY_2 = accounts[4]
     const UNKNOWN = accounts[5]
     const ORIGIN = accounts[6]
@@ -37,7 +37,7 @@ contract('PaymentProcessor', function (accounts) {
     let processor, gateway, wallet, history
 
     before(async () => {
-        gateway = await MonethaGateway.new(VAULT, PROCESSING_ADDRESS)
+        gateway = await MonethaGateway.new(VAULT, ADMIN)
         wallet = await MerchantWallet.new(MERCHANT, "merchantId")
         history = await MerchantDealsHistory.new("merchantId")
 
@@ -48,7 +48,7 @@ contract('PaymentProcessor', function (accounts) {
             wallet.address
         )
 
-        await gateway.setMonethaAddress(processor.address, true, { from: PROCESSING_ADDRESS })
+        await gateway.setMonethaAddress(processor.address, true, { from: ADMIN })
         await wallet.setMonethaAddress(processor.address, true)
         await history.setMonethaAddress(processor.address, true)
     })
@@ -226,7 +226,7 @@ contract('PaymentProcessor', function (accounts) {
 
     async function setupNewWithOrder(_merchantId) {
         merchantId = _merchantId || "merchantId";
-        let gateway = await MonethaGateway.new(VAULT, PROCESSING_ADDRESS)
+        let gateway = await MonethaGateway.new(VAULT, ADMIN)
         let wallet = await MerchantWallet.new(MERCHANT, merchantId)
         let history = await MerchantDealsHistory.new(merchantId)
 
@@ -238,7 +238,7 @@ contract('PaymentProcessor', function (accounts) {
         )
 
         await processor.setMonethaAddress(PROCESSOR, true)
-        await gateway.setMonethaAddress(processor.address, true, { from: PROCESSING_ADDRESS })
+        await gateway.setMonethaAddress(processor.address, true, { from: ADMIN })
         await wallet.setMonethaAddress(processor.address, true)
         await history.setMonethaAddress(processor.address, true)
 
