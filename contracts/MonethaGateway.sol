@@ -44,8 +44,7 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
         require(_monethaVault != 0x0);
         monethaVault = _monethaVault;
         
-        require(_admin != 0x0);
-        admin = _admin;
+        setAdmin(_admin);
     }
     
     /**
@@ -80,5 +79,14 @@ contract MonethaGateway is Pausable, Contactable, Destructible, Restricted {
         require(msg.sender == admin || msg.sender == owner);
 
         isMonethaAddress[_address] = _isMonethaAddress;
+    }
+
+    /**
+     *  setAdmin allows owner to change address of admin.
+     *  @param _admin New address of admin
+     */
+    function setAdmin(address _admin) public onlyOwner {
+        require(_admin != 0x0);
+        admin = _admin;
     }
 }
