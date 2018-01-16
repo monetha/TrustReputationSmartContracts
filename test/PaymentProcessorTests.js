@@ -1,4 +1,3 @@
-const utils = require('./utils.js')
 const BigNumber = require('bignumber.js')
 const chai = require('chai')
 chai.use(require('chai-bignumber')())
@@ -25,30 +24,40 @@ contract('PaymentProcessor', function (accounts) {
     const OWNER = accounts[0]
     const PROCESSOR = accounts[1]
     const CLIENT = accounts[2]
-    const PROCESSOR_2 = accounts[3]
+    const ADMIN = accounts[3]
     const GATEWAY_2 = accounts[4]
     const UNKNOWN = accounts[5]
     const ORIGIN = accounts[6]
     const ACCEPTOR = accounts[7]
+    const VAULT = accounts[8]
+    const MERCHANT = accounts[9]
     const PRICE = 1000
     const ORDER_ID = 123
 
-    let processor
+    let processor, gateway, wallet, history
 
     before(async () => {
+        gateway = await MonethaGateway.new(VAULT, ADMIN)
+        wallet = await MerchantWallet.new(MERCHANT, "merchantId")
+        history = await MerchantDealsHistory.new("merchantId")
+
         processor = await PaymentProcessor.new(
             "merchantId",
-            "0x0",
-            MonethaGateway.address,
-            PROCESSOR_2
+            history.address,
+            gateway.address,
+            wallet.address
         )
+
+        await gateway.setMonethaAddress(processor.address, true, { from: ADMIN })
+        await wallet.setMonethaAddress(processor.address, true)
+        await history.setMonethaAddress(processor.address, true)
     })
 
-    it('should set processor correctly', async () => {
-        await processor.setProcessor(PROCESSOR, { from: OWNER })
+    it('should set Monetha address correctly', async () => {
+        await processor.setMonethaAddress(PROCESSOR, true, { from: OWNER })
 
-        const newProcessor = await processor.processor()
-        newProcessor.should.equal(PROCESSOR)
+        const res = await processor.isMonethaAddress(PROCESSOR)
+        res.should.be.true
     })
 
     it('should add order correctly', async () => {
@@ -62,45 +71,14 @@ contract('PaymentProcessor', function (accounts) {
         order[4].should.equal(ORIGIN)
     })
 
-    it('should cancel order correctly', async () => {
-        processor = await setupNewWithOrder()
-
-        await processor.cancelOrder(ORDER_ID, MerchantWallet.address, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
-
-        const order = await processor.orders(ORDER_ID)
-        await checkState(processor, ORDER_ID, State.Cancelled)
-    })
-
-    it('should not allow to send invalid amount of money', () => {
-        return setupNewWithOrder()
-            .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE - 1 }))
-            .should.be.rejected
-    })
-
-    it('should not allow to pay twice', () => {
-        return setupNewWithOrder()
-            .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
-            .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
-            .should.be.rejected
-    })
-
-    it('should not allow to pay after order expired', () => {
-        return setupNewWithOrder()
-            .then(() => utils.increaseTime(LIFETIME + 1))
-            .then(a => a.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE }))
-            .should.be.rejected
-    })
-
     it('should accept secure payment correctly', async () => {
-        processor = await setupNewWithOrder()
-
         const order = await processor.orders(ORDER_ID)
 
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
-        
+
         const balance = new BigNumber(web3.eth.getBalance(processor.address))
         balance.should.bignumber.equal(PRICE)
-        
+
         await checkState(processor, ORDER_ID, State.Paid)
     })
 
@@ -110,7 +88,6 @@ contract('PaymentProcessor', function (accounts) {
 
         const result = await processor.refundPayment(
             ORDER_ID,
-            MerchantWallet.address,
             clientReputation,
             merchantReputation,
             0x1234,
@@ -119,8 +96,7 @@ contract('PaymentProcessor', function (accounts) {
         )
 
         await checkReputation(
-            await MerchantWallet.deployed(),
-            result,
+            wallet,
             clientReputation,
             merchantReputation
         )
@@ -144,18 +120,49 @@ contract('PaymentProcessor', function (accounts) {
         await checkState(processor, ORDER_ID, State.Refunded)
     })
 
+    it('should set Monetha gateway correctly', async () => {
+        await processor.setMonethaGateway(GATEWAY_2, { from: OWNER })
+
+        const gateway = await processor.monethaGateway()
+        gateway.should.equal(GATEWAY_2)
+    })
+
+    it('should cancel order correctly', async () => {
+        const contracts = await setupNewWithOrder()
+
+        await contracts.processor.cancelOrder(ORDER_ID, 1234, 1234, 0, "cancel from test", { from: PROCESSOR })
+
+        const order = await contracts.processor.orders(ORDER_ID)
+        await checkState(contracts.processor, ORDER_ID, State.Cancelled)
+    })
+
+    it('should not allow to send invalid amount of money', () => {
+        return setupNewWithOrder()
+            .then(a => a.processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE - 1 }))
+            .should.be.rejected
+    })
+
+    it('should not allow to pay twice', async () => {
+        const contracts = await setupNewWithOrder()
+        await contracts.processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
+        const res = contracts.processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
+
+        return res.should.be.rejected
+    })
+
     it('should process payment correctly', async () => {
         const clientReputation = randomReputation()
         const merchantReputation = randomReputation()
 
-        processor = await setupNewWithOrder()
+        const created = await setupNewWithOrder()
+        const processor = created.processor
+
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
 
         const processorBalance1 = new BigNumber(web3.eth.getBalance(processor.address))
 
         const result = await processor.processPayment(
             ORDER_ID,
-            MerchantWallet.address,
             clientReputation,
             merchantReputation,
             0x1234,
@@ -166,19 +173,38 @@ contract('PaymentProcessor', function (accounts) {
         processorBalance1.minus(processorBalance2).should.bignumber.equal(PRICE)
 
         await checkReputation(
-            await MerchantWallet.deployed(),
-            result,
+            created.wallet,
             clientReputation,
             merchantReputation
         )
         await checkState(processor, ORDER_ID, State.Finalized)
     })
 
-    it('should set Monetha gateway correctly', async () => {
-        await processor.setMonethaGateway(GATEWAY_2, { from: OWNER })
+    it('should set Merchant Deals History correctly', async () => {
+        history = await MerchantDealsHistory.new("merchantId")
+        const created = await setupNewWithOrder()
 
-        const gateway = await processor.monethaGateway()
-        gateway.should.equal(GATEWAY_2)
+        await created.processor.setMerchantDealsHistory(history.address, { from: OWNER })
+
+        const historyAddress = await created.processor.merchantHistory()
+        historyAddress.should.equal(history.address)
+    })
+
+    it('should not set Merchant Deals History for different merchant id', async () => {
+        const history2 = await MerchantDealsHistory.new("merchant2")
+
+        const created = await setupNewWithOrder("merchant1")
+
+        await created.processor.setMerchantDealsHistory(history2.address, { from: OWNER }).should.be.rejected
+    })
+
+    it('should not add order when contract is paused', async () => {
+        const CREATION_TIME = Math.floor(Date.now())
+        const ORDER_ID = randomReputation()
+        
+        await processor.pause({ from: OWNER })
+
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR }).should.be.rejected
     })
 
     async function checkState(processor, orderID, expected) {
@@ -188,7 +214,6 @@ contract('PaymentProcessor', function (accounts) {
 
     async function checkReputation(
         merchantWallet,
-        result,
         expectedClientReputation,
         expectedMerchantReputation
     ) {
@@ -198,21 +223,32 @@ contract('PaymentProcessor', function (accounts) {
         merchRep.should.bignumber.equal(expectedMerchantReputation)
     }
 
-    async function setupNewWithOrder() {
-        const CREATION_TIME = Math.floor(Date.now())
-        const res = await PaymentProcessor.new(
-            "merchantId",
-            MerchantDealsHistory.address,
-            MonethaGateway.address,
-            PROCESSOR
+
+    async function setupNewWithOrder(_merchantId) {
+        merchantId = _merchantId || "merchantId";
+        let gateway = await MonethaGateway.new(VAULT, ADMIN)
+        let wallet = await MerchantWallet.new(MERCHANT, merchantId)
+        let history = await MerchantDealsHistory.new(merchantId)
+
+        let processor = await PaymentProcessor.new(
+            merchantId,
+            history.address,
+            gateway.address,
+            wallet.address
         )
 
-        await res.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
+        await processor.setMonethaAddress(PROCESSOR, true)
+        await gateway.setMonethaAddress(processor.address, true, { from: ADMIN })
+        await wallet.setMonethaAddress(processor.address, true)
+        await history.setMonethaAddress(processor.address, true)
 
-        return res
+        const CREATION_TIME = Math.floor(Date.now())
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
+
+        return { processor, wallet }
     }
 
-    function randomReputation(){
+    function randomReputation() {
         return Math.floor(Math.random() * 100)
     }
 })
