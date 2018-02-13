@@ -32,6 +32,7 @@ contract('PaymentProcessor', function (accounts) {
     const VAULT = accounts[8]
     const MERCHANT = accounts[9]
     const PRICE = 1000
+    const FEE = 15
     const ORDER_ID = 123
 
     let processor, gateway, wallet, history
@@ -61,8 +62,7 @@ contract('PaymentProcessor', function (accounts) {
     })
 
     it('should add order correctly', async () => {
-        const CREATION_TIME = Math.floor(Date.now())
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, FEE, { from: PROCESSOR })
 
         const order = await processor.orders(ORDER_ID)
         new BigNumber(order[0]).should.bignumber.equal(State.Created)
@@ -199,12 +199,11 @@ contract('PaymentProcessor', function (accounts) {
     })
 
     it('should not add order when contract is paused', async () => {
-        const CREATION_TIME = Math.floor(Date.now())
         const ORDER_ID = randomReputation()
         
         await processor.pause({ from: OWNER })
 
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR }).should.be.rejected
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, FEE, { from: PROCESSOR }).should.be.rejected
     })
 
     async function checkState(processor, orderID, expected) {
@@ -242,8 +241,7 @@ contract('PaymentProcessor', function (accounts) {
         await wallet.setMonethaAddress(processor.address, true)
         await history.setMonethaAddress(processor.address, true)
 
-        const CREATION_TIME = Math.floor(Date.now())
-        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, CREATION_TIME, { from: PROCESSOR })
+        await processor.addOrder(ORDER_ID, PRICE, ACCEPTOR, ORIGIN, FEE, { from: PROCESSOR })
 
         return { processor, wallet }
     }

@@ -28,7 +28,14 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
 
     using SafeMath for uint256;
 
-    string constant VERSION = "0.3";
+    string constant VERSION = "0.4";
+
+    /**
+     *  Fee permille of Monetha fee.
+     *  1 permille = 0.1 %
+     *  15 permille = 1.5%
+     */
+    uint public constant FEE_PERMILLE = 15;
 
     /// MonethaGateway contract for payment processing
     MonethaGateway public monethaGateway;
@@ -49,7 +56,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
     struct Order {
         State state;
         uint price;
-        uint creationTime;
+        uint fee;
         address paymentAcceptor;
         address originAddress;
     }
@@ -103,23 +110,24 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
      *  @param _price Price of the order 
      *  @param _paymentAcceptor order payment acceptor
      *  @param _originAddress buyer address
-     *  @param _orderCreationTime order creation time
+     *  @param _fee Monetha fee
      */
     function addOrder(
         uint _orderId,
         uint _price,
         address _paymentAcceptor,
         address _originAddress,
-        uint _orderCreationTime
+        uint _fee
     ) external onlyMonetha whenNotPaused atState(_orderId, State.Null)
     {
         require(_orderId > 0);
         require(_price > 0);
+        require(_fee >= 0 && _fee <= FEE_PERMILLE.mul(_price).div(1000)); // Monetha fee cannot be greater than 1.5% of price
 
         orders[_orderId] = Order({
             state: State.Created,
             price: _price,
-            creationTime: _orderCreationTime,
+            fee: _fee,
             paymentAcceptor: _paymentAcceptor,
             originAddress: _originAddress
         });
@@ -249,8 +257,7 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyMonetha whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
-
-        monethaGateway.acceptPayment.value(orders[_orderId].price)(merchantWallet);
+        monethaGateway.acceptPayment.value(orders[_orderId].price)(merchantWallet, orders[_orderId].fee);
 
         updateDealConditions(
             _orderId,

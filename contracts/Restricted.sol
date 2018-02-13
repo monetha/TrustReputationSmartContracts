@@ -8,6 +8,12 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
  */
 contract Restricted is Ownable {
 
+    //MonethaAddress set event
+    event MonethaAddressSet(
+        address _address,
+        bool _isMonethaAddress
+    );
+
     mapping (address => bool) public isMonethaAddress;
 
     /**
@@ -23,6 +29,7 @@ contract Restricted is Ownable {
      */
     function setMonethaAddress(address _address, bool _isMonethaAddress) onlyOwner public {
         isMonethaAddress[_address] = _isMonethaAddress;
-    }
 
+        MonethaAddressSet(_address, _isMonethaAddress);
+    }
 }
