@@ -111,7 +111,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
     }
 
 /**
-     *  recordDealRefundReason creates an event of not paid deal that was cancelled 
+     *  recordDealRefundReason creates an event of paid deal that was refunded 
      *  @param _orderId Identifier of deal's order
      *  @param _clientAddress Address of client's account
      *  @param _clientReputation Updated reputation of the client
