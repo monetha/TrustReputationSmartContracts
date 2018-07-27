@@ -45,9 +45,14 @@ Client's profile, payment settings and reputation.
 
 ## How to run tests
 
+Install ganache-cli
+```
+npm install -g ganache-cli
+```
+
 In separate terminal run next command:
 ```
-testrpc
+ganache-cli
 ```
 
 In a main terminal from the project folder run next command:

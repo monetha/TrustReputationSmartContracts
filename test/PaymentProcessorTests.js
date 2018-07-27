@@ -8,6 +8,7 @@ const PaymentProcessor = artifacts.require("PaymentProcessor")
 const MerchantDealsHistory = artifacts.require("MerchantDealsHistory")
 const MonethaGateway = artifacts.require("MonethaGateway")
 const MerchantWallet = artifacts.require("MerchantWallet")
+let merchantId;
 
 contract('PaymentProcessor', function (accounts) {
 

@@ -13,6 +13,7 @@ contract('MerchantWallet', function (accounts) {
     const MERCHANT2 = accounts[2]
     const UNKNOWN = accounts[3]
     const PAYMENT_PROCESSOR_CONTRACT = accounts[4]
+    const SAFE_ACCOUNT = accounts[5]
 
     let wallet
 
@@ -57,7 +58,7 @@ contract('MerchantWallet', function (accounts) {
             wallet.setPaymentSettings("fee", "0.005", { from: UNKNOWN }).should.be.rejected,
             wallet.setCompositeReputation("Delivery", 5, { from: UNKNOWN }).should.be.rejected
         ]
-        
+
         return Promise.all(promises)
     })
 
@@ -72,6 +73,14 @@ contract('MerchantWallet', function (accounts) {
         return wallet.changeMerchantAccount(MERCHANT2, { from: UNKNOWN }).should.be.rejected
     })
 
+    it('should not allow to change merchant account when paused', async () => {
+        await wallet.pause({ from: OWNER })
+        const rejected = await wallet.changeMerchantAccount(MERCHANT, { from: MERCHANT2 }).should.be.rejected
+        await wallet.unpause({ from: OWNER })
+
+        return rejected
+    })
+
     it('should withdraw money correctly', async () => {
         const amount = 100
         await wallet.sendTransaction({ from: OWNER, value: amount })
@@ -79,7 +88,7 @@ contract('MerchantWallet', function (accounts) {
         const balance1 = new BigNumber(web3.eth.getBalance(MERCHANT))
         await wallet.withdrawTo(MERCHANT, amount, { from: MERCHANT2 })
         const balance2 = new BigNumber(web3.eth.getBalance(MERCHANT))
-        
+
         balance2.should.bignumber.equal(balance1.plus(amount))
     })
 
@@ -94,12 +103,35 @@ contract('MerchantWallet', function (accounts) {
         const amount = 100
         await wallet.sendTransaction({ from: OWNER, value: amount })
 
-        await wallet.pause({from:OWNER})
+        await wallet.pause({ from: OWNER })
+        const rejected = await wallet.withdrawTo(MERCHANT, amount, { from: MERCHANT2 }).should.be.rejected
+        await wallet.unpause({ from: OWNER })
 
-        return wallet.withdrawTo(MERCHANT, amount, { from: MERCHANT2 }).should.be.rejected
+        return rejected
     })
 
-    it('should not allow to change merchant account by other accounts', () => {
-        return wallet.changeMerchantAccount(MERCHANT, { from: MERCHANT2 }).should.be.rejected
+    it('should allow withdrawing to other addresses with transaction', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        await wallet.sendTo(SAFE_ACCOUNT, amount, { from: MERCHANT2 })
+    })
+
+    it('should not allow other addresses to withdraw with transaction', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        return wallet.sendTo(SAFE_ACCOUNT, amount, { from: MERCHANT }).should.be.rejected
+    })
+
+    it('should not allow withdrawing with transaction when paused', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        await wallet.pause({ from: OWNER })
+        const notRejected = await wallet.sendTo(SAFE_ACCOUNT, amount, { from: MERCHANT2 }).should.be.rejected
+        await wallet.unpause({ from: OWNER })
+
+        return notRejected
     })
 });

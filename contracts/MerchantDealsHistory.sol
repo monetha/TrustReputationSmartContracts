@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/ownership/Contactable.sol";
 import './Restricted.sol';
@@ -111,7 +111,7 @@ contract MerchantDealsHistory is Contactable, Restricted {
     }
 
 /**
-     *  recordDealRefundReason creates an event of paid deal that was refunded 
+     *  recordDealRefundReason creates an event of not paid deal that was cancelled 
      *  @param _orderId Identifier of deal's order
      *  @param _clientAddress Address of client's account
      *  @param _clientReputation Updated reputation of the client
