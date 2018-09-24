@@ -13,13 +13,14 @@ contract('PrivatePaymentProcessor', function (accounts) {
     const OWNER = accounts[0]
     const PROCESSOR = accounts[1]
     const CLIENT = accounts[2]
-    const ADMIN = accounts[3]
+    let FUND_ADDRESS = accounts[3]
     const GATEWAY_2 = accounts[4]
     const UNKNOWN = accounts[5]
     const ORIGIN = accounts[6]
     const ACCEPTOR = accounts[7]
     const VAULT = accounts[8]
     const MERCHANT = accounts[9]
+    
     const PRICE = 1000
     const FEE = 15
     const ORDER_ID = 123
@@ -30,9 +31,9 @@ contract('PrivatePaymentProcessor', function (accounts) {
         gateway = await MonethaGateway.new(VAULT, PROCESSOR)
         await gateway.transferOwnership(OWNER)
 
-        const merchantId = "merchantId"
+        let merchantId = "merchantId"
 
-        wallet = await MerchantWallet.new(MERCHANT, merchantId)
+        wallet = await MerchantWallet.new(MERCHANT, merchantId, FUND_ADDRESS)
 
         processor = await PrivatePaymentProcessor.new(
             merchantId,
@@ -98,7 +99,43 @@ contract('PrivatePaymentProcessor', function (accounts) {
         await processor.withdrawRefund(ORDER_ID, { from: UNKNOWN }).should.be.rejected
     })
 
-    it('should pay for order correctly', async () => {
+    it('should pay for order correctly when fund address is present', async () => {
+        FUND_ADDRESS = accounts[3]
+        const FUND_ADDRESS_BALANCE = new BigNumber(web3.eth.getBalance(FUND_ADDRESS))
+        const monethaFee = FEE
+        const vaultBalance1 = new BigNumber(web3.eth.getBalance(VAULT))
+        
+        await processor.payForOrder(ORDER_ID, ORIGIN, monethaFee, { from: ACCEPTOR, value: PRICE })
+        
+        const FUND_ADDRESS_BALANCE2 = new BigNumber(web3.eth.getBalance(FUND_ADDRESS))
+        const vaultBalance2 = new BigNumber(web3.eth.getBalance(VAULT))
+        
+        vaultBalance2.minus(vaultBalance1).should.bignumber.equal(monethaFee)
+        FUND_ADDRESS_BALANCE2.minus(FUND_ADDRESS_BALANCE).should.bignumber.equal(PRICE - monethaFee)
+    })
+    
+    it('should pay for order correctly when fund address is not present', async () => {
+        FUND_ADDRESS = "0x0000000000000000000000000000000000000000"
+        gateway = await MonethaGateway.new(VAULT, PROCESSOR)
+        await gateway.transferOwnership(OWNER)
+
+        const merchantId = "merchantId"
+
+        wallet = await MerchantWallet.new(MERCHANT, merchantId, FUND_ADDRESS)
+
+        processor = await PrivatePaymentProcessor.new(
+            merchantId,
+            gateway.address,
+            wallet.address
+        )
+
+        await processor.setMonethaAddress(PROCESSOR, true)
+        await processor.transferOwnership(OWNER)
+        await wallet.setMonethaAddress(processor.address, true)
+        await wallet.transferOwnership(OWNER)
+        await gateway.setMonethaAddress(processor.address, true, { from: PROCESSOR })
+
+
         const monethaFee = FEE
         const vaultBalance1 = new BigNumber(web3.eth.getBalance(VAULT))
 

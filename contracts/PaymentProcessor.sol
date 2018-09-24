@@ -257,8 +257,15 @@ contract PaymentProcessor is Pausable, Destructible, Contactable, Restricted {
         external onlyMonetha whenNotPaused
         atState(_orderId, State.Paid) transition(_orderId, State.Finalized)
     {
-        monethaGateway.acceptPayment.value(orders[_orderId].price)(merchantWallet, orders[_orderId].fee);
+        address fundAddress;
+        fundAddress = merchantWallet.merchantFundAddress();
 
+        if (fundAddress != address(0)) {
+            monethaGateway.acceptPayment.value(orders[_orderId].price)(fundAddress, orders[_orderId].fee);
+        } else {
+            monethaGateway.acceptPayment.value(orders[_orderId].price)(merchantWallet, orders[_orderId].fee);
+        }
+        
         updateDealConditions(
             _orderId,
             _clientReputation,

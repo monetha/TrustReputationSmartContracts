@@ -97,7 +97,15 @@ contract PrivatePaymentProcessor is Pausable, Destructible, Contactable, Restric
         require(_originAddress != 0x0);
         require(msg.value > 0);
 
-        monethaGateway.acceptPayment.value(msg.value)(merchantWallet, _monethaFee);
+        address fundAddress;
+        fundAddress = merchantWallet.merchantFundAddress();
+
+        if (fundAddress != address(0)) {
+            monethaGateway.acceptPayment.value(msg.value)(fundAddress, _monethaFee);
+        } else {
+            monethaGateway.acceptPayment.value(msg.value)(merchantWallet, _monethaFee);
+        }
+        
 
         // log payment event
         OrderPaid(_orderId, _originAddress, msg.value, _monethaFee);

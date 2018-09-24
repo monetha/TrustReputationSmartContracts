@@ -15,10 +15,13 @@ import "./SafeDestructible.sol";
 
 contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
 
-    string constant VERSION = "0.3";
+    string constant VERSION = "0.4";
 
     /// Address of merchant's account, that can withdraw from wallet
     address public merchantAccount;
+
+    /// Address of merchant's fund address.
+    address public merchantFundAddress;
 
     /// Unique Merchant identifier hash
     bytes32 public merchantIdHash;
@@ -35,21 +38,45 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /// number of last digits in compositeReputation for fractional part
     uint8 public constant REPUTATION_DECIMALS = 4;
 
+    /**
+     *  Restrict methods in such way, that they can be invoked only by merchant account.
+     */
     modifier onlyMerchant() {
         require(msg.sender == merchantAccount);
         _;
     }
 
     /**
+     *  Fund Address should always be Externally Owned Account and not a contract.
+     */
+    modifier isEOA(address _fundAddress) {
+        uint256 _codeLength;
+        assembly {_codeLength := extcodesize(_fundAddress)}
+        require(_codeLength == 0, "sorry humans only");
+        _;
+    }
+
+    /**
+     *  Restrict methods in such way, that they can be invoked only by merchant account or by monethaAddress account.
+     */
+    modifier onlyMerchantOrMonetha() {
+        require(msg.sender == merchantAccount || isMonethaAddress[msg.sender]);
+        _;
+    }
+
+    /**
      *  @param _merchantAccount Address of merchant's account, that can withdraw from wallet
      *  @param _merchantId Merchant identifier
+     *  @param _fundAddress Merchant's fund address, where amount will be transferred.
      */
-    function MerchantWallet(address _merchantAccount, string _merchantId) public {
+    function MerchantWallet(address _merchantAccount, string _merchantId, address _fundAddress) public isEOA(_fundAddress) {
         require(_merchantAccount != 0x0);
         require(bytes(_merchantId).length > 0);
 
         merchantAccount = _merchantAccount;
         merchantIdHash = keccak256(_merchantId);
+
+        merchantFundAddress = _fundAddress;
     }
 
     /**
@@ -128,15 +155,23 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
     /**
      *  Allows merchant to withdraw funds to it's own account
      */
-    function withdraw(uint amount) external {
+    function withdraw(uint amount) external onlyMerchant {
         withdrawTo(msg.sender, amount);
     }
 
     /**
-     *  Allows merchant to withdraw funds to beneficiary address with a transaction
+     *  Allows merchant or Monetha to initiate exchange of funds by withdrawing funds to deposit address of the exchange
      */
-    function sendTo(address beneficiary, uint amount) external onlyMerchant whenNotPaused {
-        doWithdrawal(beneficiary, amount);
+    function withdrawToExchange(address depositAccount, uint amount) external onlyMerchantOrMonetha whenNotPaused {
+        doWithdrawal(depositAccount, amount);
+    }
+
+    /**
+     *  Allows merchant or Monetha to initiate exchange of funds by withdrawing all funds to deposit address of the exchange
+     */
+    function withdrawAllToExchange(address depositAccount, uint min_amount) external onlyMerchantOrMonetha whenNotPaused {
+        require (address(this).balance >= min_amount);
+        doWithdrawal(depositAccount, address(this).balance);
     }
 
     /**
@@ -144,5 +179,12 @@ contract MerchantWallet is Pausable, SafeDestructible, Contactable, Restricted {
      */
     function changeMerchantAccount(address newAccount) external onlyMerchant whenNotPaused {
         merchantAccount = newAccount;
+    }
+
+    /**
+     *  Allows merchant to change it's fund address.
+     */
+    function changeFundAddress(address newFundAddress) external onlyMerchant isEOA(newFundAddress) {
+        merchantFundAddress = newFundAddress;
     }
 }

@@ -32,6 +32,7 @@ contract('PaymentProcessor', function (accounts) {
     const ACCEPTOR = accounts[7]
     const VAULT = accounts[8]
     const MERCHANT = accounts[9]
+    const FUND_ADDRESS = accounts[2]
     const PRICE = 1000
     const FEE = 15
     const ORDER_ID = 123
@@ -40,7 +41,7 @@ contract('PaymentProcessor', function (accounts) {
 
     before(async () => {
         gateway = await MonethaGateway.new(VAULT, ADMIN)
-        wallet = await MerchantWallet.new(MERCHANT, "merchantId")
+        wallet = await MerchantWallet.new(MERCHANT, "merchantId", FUND_ADDRESS)
         history = await MerchantDealsHistory.new("merchantId")
 
         processor = await PaymentProcessor.new(
@@ -161,7 +162,7 @@ contract('PaymentProcessor', function (accounts) {
         await processor.securePay(ORDER_ID, { from: ACCEPTOR, value: PRICE })
 
         const processorBalance1 = new BigNumber(web3.eth.getBalance(processor.address))
-
+        
         const result = await processor.processPayment(
             ORDER_ID,
             clientReputation,
@@ -227,7 +228,7 @@ contract('PaymentProcessor', function (accounts) {
     async function setupNewWithOrder(_merchantId) {
         merchantId = _merchantId || "merchantId";
         let gateway = await MonethaGateway.new(VAULT, ADMIN)
-        let wallet = await MerchantWallet.new(MERCHANT, merchantId)
+        let wallet = await MerchantWallet.new(MERCHANT, merchantId, FUND_ADDRESS)
         let history = await MerchantDealsHistory.new(merchantId)
 
         let processor = await PaymentProcessor.new(

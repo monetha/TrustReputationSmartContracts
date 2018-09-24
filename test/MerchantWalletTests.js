@@ -14,11 +14,13 @@ contract('MerchantWallet', function (accounts) {
     const UNKNOWN = accounts[3]
     const PAYMENT_PROCESSOR_CONTRACT = accounts[4]
     const SAFE_ACCOUNT = accounts[5]
+    const FUND_ADDRESS = accounts[6]
+    const FUND_ADDRESS2 = accounts[7]
 
     let wallet
 
     before(async () => {
-        wallet = await Wallet.new(MERCHANT, "merchantId")
+        wallet = await Wallet.new(MERCHANT, "merchantId", FUND_ADDRESS)
         await wallet.setMonethaAddress(PAYMENT_PROCESSOR_CONTRACT, true)
     });
 
@@ -110,28 +112,89 @@ contract('MerchantWallet', function (accounts) {
         return rejected
     })
 
-    it('should allow withdrawing to other addresses with transaction', async () => {
+    it('should allow deposit all funds to exchange address with transaction', async () => {
         const amount = 100
         await wallet.sendTransaction({ from: OWNER, value: amount })
 
-        await wallet.sendTo(SAFE_ACCOUNT, amount, { from: MERCHANT2 })
+        const min_amount = 100
+        await wallet.withdrawAllToExchange(SAFE_ACCOUNT, min_amount, { from: MERCHANT2 })
+
+        const balance = new BigNumber(web3.eth.getBalance(wallet.address))
+        balance.should.bignumber.equal(0)
     })
 
-    it('should not allow other addresses to withdraw with transaction', async () => {
+    it('should allow deposit all funds to exchange address with transaction by monetha', async () => {
         const amount = 100
         await wallet.sendTransaction({ from: OWNER, value: amount })
 
-        return wallet.sendTo(SAFE_ACCOUNT, amount, { from: MERCHANT }).should.be.rejected
+        const min_amount = 100
+        await wallet.withdrawAllToExchange(SAFE_ACCOUNT, min_amount, { from: PAYMENT_PROCESSOR_CONTRACT })
+
+        const balance = new BigNumber(web3.eth.getBalance(wallet.address))
+        balance.should.bignumber.equal(0)
     })
 
-    it('should not allow withdrawing with transaction when paused', async () => {
+    it('should not allow to deposit all funds with transaction when balance is lower than threshold', async () => {
+        const balance = new BigNumber(web3.eth.getBalance(wallet.address))
+
+        return await wallet.withdrawAllToExchange(SAFE_ACCOUNT, balance.plus(1), { from: PAYMENT_PROCESSOR_CONTRACT }).should.be.rejected
+    })
+
+    it('should not allow other addresses to deposit all funds with transaction', async () => {
+        const amount = 0
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        return wallet.withdrawAllToExchange(SAFE_ACCOUNT, amount, { from: MERCHANT }).should.be.rejected
+    })
+
+    it('should allow deposit to other addresses with transaction', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        await wallet.withdrawToExchange(SAFE_ACCOUNT, amount, { from: MERCHANT2 })
+    })
+
+    it('should allow deposit to other addresses with transaction by monetha', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        await wallet.withdrawToExchange(SAFE_ACCOUNT, amount, { from: PAYMENT_PROCESSOR_CONTRACT })
+    })
+
+    it('should not allow other addresses to deposit with transaction', async () => {
+        const amount = 100
+        await wallet.sendTransaction({ from: OWNER, value: amount })
+
+        return wallet.withdrawToExchange(SAFE_ACCOUNT, amount, { from: MERCHANT }).should.be.rejected
+    })
+
+    it('should not allow deposit with transaction when paused', async () => {
         const amount = 100
         await wallet.sendTransaction({ from: OWNER, value: amount })
 
         await wallet.pause({ from: OWNER })
-        const notRejected = await wallet.sendTo(SAFE_ACCOUNT, amount, { from: MERCHANT2 }).should.be.rejected
+        const notRejected = await wallet.withdrawToExchange(SAFE_ACCOUNT, amount, { from: MERCHANT2 }).should.be.rejected
         await wallet.unpause({ from: OWNER })
 
         return notRejected
+    })
+
+    it('should change merchant fund address correctly', async () => {
+        await wallet.changeFundAddress(FUND_ADDRESS2, { from: MERCHANT2 })
+        const res = await wallet.merchantFundAddress()
+
+        res.should.equal(FUND_ADDRESS2)
+    })
+
+    it('should not change merchant fund address by other account', async () => {
+        const rejected = await wallet.changeFundAddress(FUND_ADDRESS2, { from: MERCHANT }).should.be.rejected
+
+        return rejected
+    })
+
+    it('should not change merchant fund address if fund address is a contract', async () => {
+        const rejected = await wallet.changeFundAddress(PAYMENT_PROCESSOR_CONTRACT, { from: MERCHANT }).should.be.rejected
+
+        return rejected
     })
 });
