@@ -1,4 +1,13 @@
-# Monetha gateway smart contracts
+
+
+# DEPRECATED: Monetha gateway smart contracts
+
+All contracts are further maintained in following repositories:
+
+* [payment-contracts](https://github.com/monetha/payment-contracts) 
+* [loyalty-contracts](https://github.com/monetha/loyalty-contracts) 
+* [utility-contracts](https://github.com/monetha/utility-contracts) 
+* [reputation-contracts](https://github.com/monetha/reputation-contracts) 
 
 ## Abstract
 *Universal​ ​decentralized​ ​trust​ ​and​ ​reputation​ platform*
